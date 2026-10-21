@@ -7,3 +7,7 @@
 node_modules/
 skills_install.log
 /devpost/notes/
+# installed skill pack copies (see skills-lock.json)
+/.agents/
+/.claude/
+/agent/

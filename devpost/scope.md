@@ -1,75 +1,83 @@
 ---
 doc: scope
-status: approved
+status: draft
 ---
 
-# Czytnik Roboty Agentów (Agent Work Reader)
+# Mission Rescue: Agent Proof & Recovery (Czytnik Roboty Agentów)
 
-A nice, clear app: Daniel plugs in his AI agents and sees, in one list like the one his team already keeps, what each agent did, which one stopped halfway, and how much of his plan limits is left, with nothing to type and no logins.
+A Polish command center that shows the truth about an AI agent's work: what was really done (with proof), where and why the agent stopped, and how to safely resume the mission until it is confirmed complete.
+
+Revision history:
+- 21 Oct 2026, 14:53: first version approved by Daniel ("Plan lux"), as "Czytnik Roboty Agentów" (agent work reader + AI limit guard).
+- 21 Oct 2026, 15:04: Daniel extended it into "MISSION RESCUE — Agent Proof & Recovery" in his own written concept. The approved kernel stays; this revision adds proof checking and mission recovery.
 
 ## The Unique Kernel
 
-In his words: "What annoys me most is when it stops working although it had a mission from A to Z: it finishes only part of it, and then waits for who knows what."
+In Daniel's words (14:50): "What annoys me most is when it stops working although it had a mission from A to Z: it finishes only part of it, and then waits for who knows what."
 
-So the heart of the reader is catching agents that stopped halfway. When an agent had a mission from A to Z, finished only part of it and went quiet without saying what it is waiting for, the reader shows it at once, in red: how far it got and how long it has been silent.
+And his main rule (15:04): "I don't want another agent that promises to work from A to Z and disappears after the third step. I want a tool that can show the truth about the agents' work, help recover an interrupted mission and bring it to a confirmed completion."
 
-All of it the way he wants it: "simple to use and attractive" (his words), in Polish, for someone who does not program. The tools we came across for watching agents and limits (status-line scripts, command-line usage trackers) are built for programmers, in English, and they count usage, not unfinished missions.
+So the heart of Mission Rescue: catch a mission that stopped halfway, prove what was really done, and lead it back to a finish that is confirmed by evidence. Green only with proof.
+
+The tools we came across for watching agents and limits (status-line scripts, command-line usage trackers) are built for programmers, in English, and they count usage, not unfinished missions or proof of work.
 
 ## Who It's For
 
-Daniel. He runs several AI agents on his regular subscriptions (Claude, ChatGPT and others) and hands them tasks for the team in the evening: writing software, searching, checking. They leave a lot of files behind ("we have a ton of that"), mostly in English, which he does not read comfortably. Today he finds out what happened by asking the agents or digging through those files, and he checks his plan limits by hand.
+Daniel. He runs several AI agents on his regular subscriptions (Claude, ChatGPT and others) and hands them tasks for the team in the evening: writing software, searching, checking. They leave a lot of files behind ("we have a ton of that"), mostly in English, which he does not read comfortably. Today he finds out what happened by asking the agents or digging through those files, and an agent that says "done" is hard to check.
 
 Later: other people who run several AI agents.
 
 ## The Core Loop
 
-1. He opens the app.
-2. He plugs in his agents once, by pointing it at the files where they record their work.
-3. He sees one list: each agent, what it did, what is done, in progress, waiting for him, and which agent stopped halfway without saying why. Beside it: how much of each plan's limit is used and when it resets.
-4. He comes back whenever the agents have worked on his tasks: one glance shows what happened and what to hand out next.
+1. He opens Mission Rescue and loads a mission: the agent's local mission file and work log.
+2. He sees the truth at a glance: which tasks are done with proof, which were only declared, what is left.
+3. If the mission stopped, he sees why, in plain Polish: a likely failure, waiting for a limit, waiting for a person, or no progress.
+4. He takes the rescue plan (last confirmed checkpoint, missing steps, a ready resume instruction) and gives it to the agent.
+5. After the agent delivers, he checks again. The mission turns green only when every task has verified proof.
 
 ## Inspiration & Identity
 
 - "A nice, clear app" and "simple to use, attractive" (his words).
-- A list "like the ones we have at home": the agent and task lists that Daniel and his AI agents already keep.
-- Polish everywhere.
-- Scannable at a glance: green, yellow and red, numbers, short bold labels, no walls of text. Daniel reads visually.
-- "In our modern style" (his words, 21 Oct). The agent reads this as the style of the team's 3D demo websites (Ciao Bella, BRYŁA); Daniel to confirm. How much 3D fits into a 2-4 hour proof of concept without hiding the list is a PRD decision. The style is rebuilt from scratch: old code cannot be reused here, while public libraries (for example three.js) are fine.
+- "Clear status cards, an attractive look, subtle 3D accents and an explanation of every problem in plain language" (his words, 15:04).
+- "In our modern style" (his words): the team's 3D demo websites (Ciao Bella, BRYŁA). Subtle 3D only, so the status stays readable. The style is rebuilt from scratch: old code cannot be reused here, while public libraries (for example three.js) are fine.
+- Polish everywhere, scannable at a glance: green, yellow and red, numbers, short bold labels, no walls of text.
 - References: the team's 3D demo websites named above; links to be added in the PRD.
 
 ## Why This Matters to the Learner
 
-In his words: reading the workspaces, "we have a ton of that". He has been building his agent system, GnyPcior, for more than two months and works with agents every day. What annoys him most is an agent that stops halfway through a mission and then waits for who knows what. He wants the information to be there "normally", by itself, and the agents' work comes first: "The agents' work, of course."
+In his words: reading the workspaces, "we have a ton of that". He has been building his agent system, GnyPcior, for more than two months and works with agents every day. Agents that stop halfway and wait for who knows what cost him the most. He wants the truth about the work and a way back to a confirmed finish.
 
 ## What "Working" Looks Like
 
-In his words: "We open a nice, clear app, I plug in the agents… it has to be some kind of list, like the ones we have at home."
+The jury demo, in Daniel's words (15:04): "The agent has a mission with seven tasks. It completed three and stopped. The program loads a real sample log, detects the break, shows a red status, presents the evidence and generates a resume plan. After the verified results of the remaining tasks are delivered, it shows a green status."
 
-The moment: he plugs in the agents and their work appears at once as a clear list in Polish (green, yellow, red). One agent glows red: it stopped halfway through its mission (for example 3 of 7 steps) and has been silent for two hours without saying what it is waiting for. The limits panel shows how much is left. It can be shown in about a minute, in a short demo video.
+"This whole flow has to really work, not be just an animation."
 
 ## The POC Boundary
 
-- One page in Polish that opens in the browser on his own computer. Nothing is sent anywhere; no logins.
-- Plug in an agent: pick the file or folder where that agent records its work. The agent appears in the list.
-- The list: each agent with its mission and tasks, coloured by status (done, in progress, waiting for you), with a "waiting for you" group on top.
-- Stall catcher (the heart): an agent whose mission is not finished, and which has been silent longer than a set time without saying what it waits for, turns red, showing how far it got (steps done out of all) and how long it has been silent.
-- Limits panel: percent used and reset time for each plan, read from a small limits file (the numbers Claude Code's status line provides), or typed by hand when there is no file.
-- Fictional sample agents and files in the repository, so anyone can try it in a minute.
+The six parts of his concept, each kept small but real:
+
+1. **Mission Tracker:** reads a local mission file and work log; shows completed steps, remaining tasks and proof of execution.
+2. **Proof Engine:** compares what the agent declared with the actual results; nothing turns green without proof.
+3. **Stall Detector:** detects a lack of progress, not just silence; tells a likely failure from waiting for a limit or a person.
+4. **Mission Rescue:** shows the last confirmed checkpoint and the missing steps, and generates a concrete instruction for resuming safely. Uncertain operations are not repeated before their effects are checked.
+5. **Limit Guardian:** shows limits and reset times, and clearly labels data as manual, demo, or automatically verified.
+6. **Polish command center:** clear status cards, an attractive look, subtle 3D accents, and every problem explained in plain language.
+
+Plus: a real sample mission (7 tasks, stopped after 3) and a sample agent that really delivers the remaining results, so the red-to-green flow runs for real. Working end to end with tests first; the look and extras after.
 
 ## Later
 
-- A ready-made status-line script that writes the limits file automatically; reading Codex's local logs.
-- Refreshing by itself when the files change.
-- A phone view.
-- A phone notification when an agent stalls.
-- More agents and tools (Gemini, Grok and others).
+- Reading the native logs of his own agent team and other tools.
+- Refreshing by itself when the files change; a phone view; a phone notification when a mission stalls.
+- Several missions and agents side by side.
 - Short Polish summaries of notes written in English (needs an AI model; first find an allowed, free route).
 - Sharing with other people: a free period first, then paid use (his idea from the start).
 
 ## Explicitly Cut
 
-- Logging in to claude.ai, chatgpt.com or other chat sites to read data: their terms forbid automated access.
-- Steering the agents or sending them tasks (the earlier "super agent" idea), including restarting a stalled agent: the same terms problem for chat apps, and far bigger than a 2-4 hour proof of concept.
+- Logging in to claude.ai, chatgpt.com or other chat sites, or automating private chats: their terms forbid automated access ("no disallowed workarounds", his words).
+- Steering or restarting agents automatically: Mission Rescue only shows the truth and writes the resume instruction; a person hands it to the agent.
 - Real logs, personal data or secrets in the public repository: fictional samples only.
 - Paid APIs: Daniel's rule is subscriptions only.
 - Old GnyPcior code: this hackathon needs new code from an empty folder (the idea can be old).
