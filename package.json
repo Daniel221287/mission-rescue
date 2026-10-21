@@ -1,6 +1,6 @@
 {
   "name": "mission-rescue",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Mission Rescue: Agent Proof & Recovery. The truth about an AI agent's mission: what is really done (with proof), why it stopped, and how to resume it safely.",
   "license": "MIT",
   "private": true,
@@ -12,6 +12,13 @@
     "start": "node tools/server.mjs --open",
     "test": "node --test",
     "demo:reset": "node tools/mission-rescue.mjs demo-reset",
+    "demo:agent": "node tools/mission-rescue.mjs demo-agent missions/weekly-report --delay 1500",
+    "demo:honesty": "node tools/mission-rescue.mjs honesty-test missions/weekly-report",
     "check": "node tools/mission-rescue.mjs check"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Daniel221287/mission-rescue.git"
+  },
+  "homepage": "https://daniel221287.github.io/mission-rescue/"
 }

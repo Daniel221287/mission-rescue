@@ -179,15 +179,18 @@ mission-rescue/
 │   ├── demo/
 │   │   ├── weekly-report.mjs   # fictional data + the 7 tasks
 │   │   ├── samples.mjs         # sample workspace builder
+│   │   ├── extra-samples.mjs   # one sample for every other kind of stop
 │   │   └── sample-agent.mjs    # follows the rescue plan
-│   ├── fonts/                  # woff2 + OFL licences
-│   └── vendor/                 # three.module.min.js + LICENSE
+│   ├── fonts/                  # woff2 + fonts.css + OFL licences
+│   └── vendor/                 # three.module.min.js + three.LICENSE.txt
 ├── tools/
 │   ├── server.mjs              # Local Program (read-only)
 │   ├── fs-source.mjs           # disk source for Node
-│   ├── mission-rescue.mjs      # check / demo-reset / demo-agent
+│   ├── mission-rescue.mjs      # check / demo-reset / demo-agent / honesty-test
 │   └── claude-statusline.mjs   # Claude Code status line → limits file
-├── docs/AGENT_PROTOCOL.md
+├── docs/
+│   ├── AGENT_PROTOCOL.md       # mission format, agent instruction (EN/PL), SHA-256, limits
+│   └── img/                    # README screenshots
 ├── test/                       # node --test
 ├── missions/                   # local workspace (demo-reset; not committed)
 └── devpost/                    # scope, prd, spec, checklist, HTML companions, app map

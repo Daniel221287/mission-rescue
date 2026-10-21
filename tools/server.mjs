@@ -6,7 +6,7 @@
 
 import http from 'node:http';
 import path from 'node:path';
-import { promises as fs } from 'node:fs';
+import { promises as fs, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { safeRelPath } from '../app/engine/paths.mjs';
@@ -118,10 +118,13 @@ export function createServer({ workspace = path.join(ROOT, 'missions'), appRoot 
 }
 
 function parseArgs(argv) {
-  const args = { port: 4317, workspace: path.join(ROOT, 'missions'), open: false };
+  const args = { port: 4317, workspace: path.join(ROOT, 'missions'), open: false, ownWorkspace: false };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--port') args.port = Number(argv[(i += 1)]);
-    else if (argv[i] === '--workspace') args.workspace = argv[(i += 1)];
+    else if (argv[i] === '--workspace') {
+      args.workspace = argv[(i += 1)];
+      args.ownWorkspace = true;
+    }
     else if (argv[i] === '--open') args.open = true;
   }
   return args;
@@ -131,15 +134,23 @@ function openBrowser(url) {
   const command = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';
   const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
   try {
-    spawn(command, args, { stdio: 'ignore', detached: true }).unref();
+    const child = spawn(command, args, { stdio: 'ignore', detached: true });
+    child.on('error', () => {}); // no browser opener on this system: the address is printed anyway
+    child.unref();
   } catch {
     // opening the browser is a convenience only
   }
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMain) {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
+  // First start with the default folder: put the sample missions there, so the page has something to show.
+  if (!args.ownWorkspace && !existsSync(args.workspace)) {
+    const { demoReset } = await import('./mission-rescue.mjs');
+    await demoReset(args.workspace);
+    console.log(`Sample missions written to ${args.workspace}`);
+  }
   const server = createServer({ workspace: args.workspace });
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
@@ -158,3 +169,5 @@ if (isMain) {
     if (args.open) openBrowser(url);
   });
 }
+
+if (isMain) main();

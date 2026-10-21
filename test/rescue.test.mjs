@@ -126,4 +126,5 @@ test('the sample agent refuses other missions and read-only folders', async () =
   await ws.write('other/mission.json', JSON.stringify({ format: 'mission-rescue/1', title: 'x', tasks: [{ id: 1, title: 'a', artifact: { file: 'a.txt', check: { type: 'nonEmpty' } } }] }));
   await assert.rejects(() => runSampleAgent(subSource(ws, 'other')), /only works on the sample mission/);
   await assert.rejects(() => runSampleAgent({ ...subSource(ws, 'weekly-report'), writable: false }), /writable/);
+  await assert.rejects(() => tamperSample(subSource(ws, 'other')), /only works on the sample mission/);
 });

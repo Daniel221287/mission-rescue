@@ -58,6 +58,15 @@ export async function runSampleAgent(source, { clock = () => Date.now(), delayMs
 // The condition still passes; only the fingerprint can catch it.
 export async function tamperSample(source) {
   if (!source.writable) throw new Error('The honesty test needs a writable mission folder.');
+  let mission = null;
+  try {
+    mission = JSON.parse(await source.readText('mission.json'));
+  } catch {
+    mission = null;
+  }
+  if (!mission || mission.demo !== 'weekly-report') {
+    throw new Error('The honesty test only works on the sample mission "weekly-report".');
+  }
   const file = weeklyTask(3).artifact.file;
   const text = await source.readText(file);
   if (text == null) throw new Error(`missing ${file}`);
