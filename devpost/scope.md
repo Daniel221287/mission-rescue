@@ -1,6 +1,6 @@
 ---
 doc: scope
-status: draft
+status: approved
 ---
 
 # Mission Rescue: Agent Proof & Recovery (Czytnik Roboty Agentów)
@@ -10,6 +10,7 @@ A Polish command center that shows the truth about an AI agent's work: what was 
 Revision history:
 - 21 Oct 2026, 14:53: first version approved by Daniel ("Plan lux"), as "Czytnik Roboty Agentów" (agent work reader + AI limit guard).
 - 21 Oct 2026, 15:04: Daniel extended it into "MISSION RESCUE — Agent Proof & Recovery" in his own written concept. The approved kernel stays; this revision adds proof checking and mission recovery.
+- 21 Oct 2026, 15:23: Daniel reviewed this revision ("the direction is very good; we don't change the idea"), asked for five technical improvements (real mission reading, four proof levels, a smarter stall detector with a confidence level, safe rescue, a real end-to-end demo with failure tests) and a product the jury can run, and asked to proceed through the build. Approved with those changes.
 
 ## The Unique Kernel
 
@@ -57,19 +58,19 @@ The jury demo, in Daniel's words (15:04): "The agent has a mission with seven ta
 
 The six parts of his concept, each kept small but real:
 
-1. **Mission Tracker:** reads a local mission file and work log; shows completed steps, remaining tasks and proof of execution.
-2. **Proof Engine:** compares what the agent declared with the actual results; nothing turns green without proof.
-3. **Stall Detector:** detects a lack of progress, not just silence; tells a likely failure from waiting for a limit or a person.
-4. **Mission Rescue:** shows the last confirmed checkpoint and the missing steps, and generates a concrete instruction for resuming safely. Uncertain operations are not repeated before their effects are checked.
-5. **Limit Guardian:** shows limits and reset times, and clearly labels data as manual, demo, or automatically verified.
-6. **Polish command center:** clear status cards, an attractive look, subtle 3D accents, and every problem explained in plain language.
+1. **Mission Tracker:** really reads a local mission file and work log (built-in samples, a folder on his computer through a read-only local program, or a folder picked in the browser; nothing is uploaded); shows completed steps, remaining tasks and proof of execution.
+2. **Proof Engine:** four separate levels: declared, file exists, artifact verified (SHA-256 and the task's condition), and an external effect only when it is independently confirmed. A file's hash alone does not prove that something happened in the real world. Nothing turns green without proof.
+3. **Stall Detector:** detects a lack of progress, not just silence; 30 minutes of silence is not automatically a failure; tells a likely failure from no progress, waiting for a limit, waiting for a person, normal work and an undetermined state, with the concrete reason and a confidence level. A heartbeat is not progress.
+4. **Mission Rescue:** shows the last confirmed checkpoint, the remaining tasks and an exact resume instruction. When an operation's effect is unknown, it first checks whether the operation already happened; it never blindly repeats it. In this version the user hands the instruction to the agent.
+5. **Limit Guardian:** shows limits and reset times, and clearly labels data as manual, demo, automatically verified, or out of date.
+6. **Polish command center:** a modern, attractive PL/EN interface, clear status cards, subtle 3D, excellent on the phone, and every problem explained in plain language. The look never replaces real operation.
 
-Plus: a real sample mission (7 tasks, stopped after 3) and a sample agent that really delivers the remaining results, so the red-to-green flow runs for real. Working end to end with tests first; the look and extras after.
+Plus: a real sample mission (7 tasks; 1–3 proven; task 4 started with an uncertain effect) and a sample agent that really delivers the remaining results, so the red-to-green flow runs for real; tests for a missing file, a wrong fingerprint, a wrong result and out-of-date limits; and a free public demo address, so the jury can run and check it, not only watch it. Working end to end with tests first; the look and extras after. Zero spend.
 
 ## Later
 
 - Reading the native logs of his own agent team and other tools.
-- Refreshing by itself when the files change; a phone view; a phone notification when a mission stalls.
+- Refreshing by itself when the files change; a phone notification when a mission stalls.
 - Several missions and agents side by side.
 - Short Polish summaries of notes written in English (needs an AI model; first find an allowed, free route).
 - Sharing with other people: a free period first, then paid use (his idea from the start).

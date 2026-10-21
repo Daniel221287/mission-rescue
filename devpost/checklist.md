@@ -1,67 +1,69 @@
 ---
 doc: checklist
-status: draft
+status: approved
 ---
 
 # Build Checklist
 
-Build mode: [to be chosen by Daniel: learn or fast]
+Build mode: fast (Daniel, 21 Oct 2026, 15:23: "Realizuj kolejne bezpieczne, autoryzowane etapy samodzielnie" — carry out the next safe, authorized stages on your own; he reviews at the hands-on checkpoints)
+
+Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he approved the plan with five improvements, which reshaped slices 1–3 below, and asked to proceed without stopping.
 
 ## Slices
 
-- [ ] **1. The sample mission tells the truth: red, 3 of 7 proven**
-  Becomes usable: Start the app and see the missions list; open "Raport tygodniowy": 7 tasks, tasks 1–3 proven with their files and checks, task 4 only started, and a red "Prawdopodobna awaria" verdict with a plain explanation.
-  Why now: The kernel first (proof and stall detection on a real mission), and it bootstraps everything else: the engine, the local server, the sample mission and a first screen.
-  PRD ref: `prd.md > The Core Journey` (steps 1–4), `prd.md > Mission Tracker`, `prd.md > Proof Engine`, `prd.md > Stall Detector`
-  Spec ref: `spec.md > Mission Reader`, `spec.md > Work Log Reader`, `spec.md > Proof Engine`, `spec.md > Stall Detector`, `spec.md > Mission Analyzer`, `spec.md > Local Server`, `spec.md > Command Center Screen`, `spec.md > Sample Missions and the Sample Agent`, `spec.md > File Structure`
-  Build: Scaffold per the file structure (package.json, START.cmd, folders); write the mission and work-log readers, the Proof Engine and the Stall Detector; the sample tasks and demo-reset; the analyzer and the read-only server; a first plain screen with the list and the mission view; tests for proof states and the stall verdicts.
-  Verify (mechanical): `node --test` passes (verified, claimed without proof, missing, mismatch, check failed; likely failure for the sample); after `node scripts/demo-reset.mjs` and starting the server, `GET /api/missions/weekly-report` returns 3 of 7 verified and `likely-failure`; a headless browser check shows "3 z 7" and the red verdict.
-  Learner check: Double-click START.cmd, open "Raport tygodniowy" and say whether you can tell at a glance what was really done and why it stopped.
-  Commit: `Show the sample mission with proofs and a red stall verdict`
+- [ ] **1. The jury mission tells the truth: real files, red, 3 of 7 proven**
+  Becomes usable: Open the page (local program or the built-in samples) and the jury mission "Raport tygodniowy" is read from real files: tasks 1–3 proven on all levels, task 4 started with an incomplete, undeclared result, tasks 5–7 not started, and a red "Prawdopodobna awaria" with its reason, facts and confidence. The command-line check prints the same.
+  Why now: The kernel first (real reading, proof levels, stall diagnosis), and it bootstraps the engine, the sample builder, the local program and a first plain page.
+  PRD ref: `prd.md > The Core Journey` (steps 1–5), `prd.md > Mission Tracker`, `prd.md > Proof Engine`, `prd.md > Stall Detector`
+  Spec ref: `spec.md > Mission Reader`, `spec.md > Work Log Reader`, `spec.md > Proof Engine`, `spec.md > Stall Detector`, `spec.md > Mission Analyzer`, `spec.md > Sources`, `spec.md > Sample Builder and Sample Agent`, `spec.md > Local Program`, `spec.md > Command-Line Tool`, `spec.md > Command Center Screen`, `spec.md > File Structure`
+  Build: Scaffold (package.json, START.cmd, folders, root index.html, .nojekyll); engine modules (paths, hash, memory source, mission, worklog, proof, stall, analyze); the weekly-report data and tasks; the sample builder (jury mission); the disk source, demo-reset and check commands; the read-only local program; a first plain page with the built-in samples and the "this computer" source; tests.
+  Verify (mechanical): `node --test` passes (proof states including missing file, fingerprint mismatch, wrong result, undeclared result; the jury verdict likely-failure/high); `node tools/mission-rescue.mjs demo-reset` then `check missions/weekly-report` prints 3/7 and likely-failure; the local program serves `/workspace/index.json`; a headless browser shows "3 z 7" and the red verdict for both sources.
+  Learner check: Open the page, open "Raport tygodniowy" and say whether you can tell at a glance what was really done, why it stopped, and how sure the diagnosis is.
+  Commit: `Read real missions and show proof levels with a stall diagnosis`
 
-- [ ] **2. Rescue plan and a real red-to-green finish**
-  Becomes usable: The rescue panel shows checkpoint 3, missing 4–7, task 4 "Sprawdź skutki przed ponowieniem" and a resume instruction with Copy; after the sample agent runs and "Sprawdź ponownie" is pressed, the mission is green 7 of 7; changing a proven file afterwards turns it red again.
-  Why now: This completes the jury demo end to end while everything is still plain, so any problem in the flow shows up before styling.
-  PRD ref: `prd.md > The Core Journey` (steps 5–7), `prd.md > Mission Rescue`, `prd.md > Proof Engine`
-  Spec ref: `spec.md > Rescue Planner`, `spec.md > Sample Missions and the Sample Agent`, `spec.md > Command Center Screen`
-  Build: The Rescue Planner and its Polish/English instruction; the sample agent (checks task 4's effects first, then computes tasks 4–7 and logs real fingerprints); the rescue panel, Copy and "Sprawdź ponownie" on the screen; an end-to-end test of red → agent → green → tampered file → red.
-  Verify (mechanical): `node --test` passes including the end-to-end flow on a temporary copy; on the running app the API goes from `likely-failure` 3/7 to `complete` 7/7 after `node scripts/demo-agent.mjs weekly-report`; a headless browser check sees red, then green after re-check.
-  Learner check: Open the sample, press Copy and paste the plan somewhere to read it, run the sample agent, press "Sprawdź ponownie" and watch it turn green.
-  Commit: `Add the rescue plan and a verified red-to-green finish`
+- [ ] **2. Safe rescue and a real red-to-green finish**
+  Becomes usable: The rescue panel (checkpoint 3, remaining 4–7, task 4 "check first", the instruction with Copy); the sample agent finishes the mission for real in the page and on disk; "Sprawdź ponownie" shows 7 of 7 green; "Test uczciwości" turns it red again. The public demo address works for the hands-on check.
+  Why now: This completes the jury demo end to end while the page is still plain, so any flaw in the flow shows up before styling.
+  PRD ref: `prd.md > The Core Journey` (steps 6–9), `prd.md > Mission Rescue`, `prd.md > Demo and Self-Check`
+  Spec ref: `spec.md > Rescue Planner`, `spec.md > Sample Builder and Sample Agent`, `spec.md > Command-Line Tool`, `spec.md > Command Center Screen`
+  Build: The Rescue Planner (actions, checks, Polish and English instruction); the sample agent (check first, redo or declare, compute, write, log with SHA-256); the rescue panel, Copy, re-check, sample-agent and honesty-test buttons; the demo-agent command; end-to-end tests on memory and on disk; GitHub Pages switched on.
+  Verify (mechanical): `node --test` passes including red → agent → green → tamper → red on memory and on a temporary disk folder; on disk `demo-agent` then `check` gives complete 7/7 and exit code 0; a headless browser on the built-in sample goes red → green → red; the public address answers with the page.
+  Learner check: On your phone or computer, open the public demo, open "Raport tygodniowy", read and copy the plan, run the sample agent, press "Sprawdź ponownie", then try "Test uczciwości".
+  Commit: `Add safe rescue plans and a verified red-to-green finish`
 
-- [ ] **3. Every kind of stop explained, every limit labelled**
-  Becomes usable: Extra sample missions show "Czeka na limit" with the reset time, "Czeka na Ciebie" with the agent's question, and "Brak postępu"; the limits panel shows DEMO numbers, numbers from the status-line script labelled ZWERYFIKOWANE AUTOMATYCZNIE, and numbers typed by hand labelled RĘCZNE.
-  Why now: The detector's distinctions and the honest limit labels are part of the kernel; they come before the look.
-  PRD ref: `prd.md > Stall Detector`, `prd.md > Limit Guardian`
-  Spec ref: `spec.md > Stall Detector`, `spec.md > Limit Guardian`, `spec.md > Sample Missions and the Sample Agent`
-  Build: Extra samples for limit, human and no-progress; the limits reader and the status-line script; the limits panel with labels and the manual form; tests for every verdict and every label (fresh and old automatic data).
-  Verify (mechanical): `node --test` passes; feeding the documented status-line sample JSON to `tools/claude-statusline.mjs` writes `data/limits.auto.json` and `GET /api/limits` returns it labelled verified; a headless browser check sees all three labels and the three extra verdicts.
-  Learner check: Open the three extra missions and say whether each explanation is clear; look at the limits panel and add one limit by hand.
-  Commit: `Explain every stop and label every limit source`
+- [ ] **3. Every kind of stop explained, outside effects and limits labelled**
+  Becomes usable: Extra samples show "Czeka na limit" (with the reset time), "Czeka na Ciebie" (with the question), "Brak postępu", "Stan nieustalony" (low confidence), an outside effect waiting for a human confirmation, and a broken mission file; the limits panel shows DEMO, RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE and NIEAKTUALNE; a picked folder works in Chrome/Edge.
+  Why now: The detector's honest distinctions and the labelled data are part of the kernel; they come before the look.
+  PRD ref: `prd.md > Stall Detector`, `prd.md > Proof Engine` (level 4), `prd.md > Limit Guardian`, `prd.md > Mission Tracker`
+  Spec ref: `spec.md > Stall Detector`, `spec.md > Proof Engine`, `spec.md > Limit Guardian`, `spec.md > Sources`, `spec.md > Sample Builder and Sample Agent`
+  Build: Extra samples; limits reading with labels and ages; the status-line script; manual limits and human confirmations in the page; the picked-folder source with the fallback; tests for every verdict, confidence and label (including out-of-date limits and a confirmation voided by a changed file).
+  Verify (mechanical): `node --test` passes; the documented status-line sample input written through `tools/claude-statusline.mjs` produces `limits/limits.auto.json` and the panel labels it verified, and an old capture is labelled out of date; a headless browser sees every extra verdict and every label; picking a folder is checked in a headless Chromium with the folder-picker fallback.
+  Learner check: Open each extra sample and say whether the reason and the confidence make sense; add a limit by hand; confirm the outside effect in the offer sample.
+  Commit: `Explain every stop and label outside effects and limits`
 
-- [ ] **4. The Polish command center: look, English switch, 3D beacon**
-  Becomes usable: The finished look: clear cards, big status words, "Co się stało" and "Co zrobić" for every state, light and dark themes, the PL/EN switch, and the 3D status beacon glowing the mission's colour (flat lamp without WebGL).
-  Why now: Daniel's rule: working flow and tests first, the look after; the screens it styles are now final.
+- [ ] **4. The Polish command center: modern look, PL/EN, 3D beacon, phone-first**
+  Becomes usable: The finished look: beautiful cards, readable statuses, "Co się stało" and "Co zrobić" everywhere, light and dark themes, PL/EN, the 3D beacon glowing the mission's colour (flat lamp without WebGL), and comfortable use on a phone.
+  Why now: Daniel's rule: real operation and tests first, the look after; the screens it styles are now final.
   PRD ref: `prd.md > Look and Feel`, `prd.md > Polish Command Center`, `prd.md > Screens and Layout`
   Spec ref: `spec.md > Look and Feel`, `spec.md > Command Center Screen`
-  Build: Styles and saved fonts; complete Polish and English texts; the beacon with three.js saved in the project and the fallback; reduced-motion handling.
-  Verify (mechanical): Headless browser screenshots at desktop and phone width in light and dark show no overflow and no console errors; the EN switch changes the interface texts; with WebGL disabled the flat lamp appears; `node --test` still passes.
-  Learner check: Look at the app and say what you would change to make it simpler or more attractive.
-  Commit: `Style the command center with PL/EN and a 3D status beacon`
+  Build: Styles and saved fonts; complete Polish and English texts; the beacon with three.js saved in the project and its fallback; reduced motion; phone layout.
+  Verify (mechanical): Headless screenshots at desktop and phone width in light and dark show no overflow and no console errors; the EN switch changes every interface text; with WebGL off the flat lamp shows; `node --test` still passes.
+  Learner check: Look at it on your phone and computer and say what you would change to make it simpler or more attractive.
+  Commit: `Style the command center with PL/EN, a 3D beacon and a phone layout`
 
-- [ ] **5. Ready for others to try**
-  Becomes usable: Someone else can clone the repository, read the README (English and Polish), run START.cmd or `node src/server.mjs`, replay the demo, and teach their own agent the work-log format from the protocol guide.
-  Why now: The proof of concept must stand on its own before shipping; this is the last usable increment.
+- [ ] **5. Ready for others to run and check**
+  Becomes usable: Anyone can open the public demo, or clone the repository and run START.cmd / `node tools/server.mjs`, replay the demo from the README (English and Polish), and teach their own agent the work-log format.
+  Why now: The proof of concept must stand on its own before shipping.
   PRD ref: `prd.md > What We're Building`
   Spec ref: `spec.md > Agent Protocol Guide`, `spec.md > Where It Runs and How Someone Tries It`
-  Build: README, docs/AGENT_PROTOCOL.md, LICENSE (MIT), final START.cmd, package.json scripts; a fresh-copy run of the whole demo.
-  Verify (mechanical): In a fresh copy of the repository: `node --test` passes, demo-reset → red, demo-agent → green through the API; README commands run as written.
+  Build: README, docs/AGENT_PROTOCOL.md, LICENSE (MIT), final START.cmd and package.json scripts; fresh-clone runs on Linux and on Windows.
+  Verify (mechanical): In fresh clones on Linux and on Windows: `node --test` passes, demo-reset → red, demo-agent → green through the command line; README commands run as written; the public demo passes the red → green → red check in a headless browser.
   Learner check: Follow the README's "try it" steps yourself and say if any step was unclear.
   Commit: `Add README, agent protocol guide and license`
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 2 (the full red-to-green flow on the plain screen)
+- [ ] Early usable behavior explored — after slice 2 (the full red-to-green flow on the public demo, phone or computer)
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review

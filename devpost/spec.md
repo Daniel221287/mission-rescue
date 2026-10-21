@@ -1,230 +1,226 @@
 ---
 doc: spec
-status: draft
+status: approved
 ---
 
 # Mission Rescue — Technical Spec
 
+Approval: 21 Oct 2026, 15:23. Daniel asked for real local reading (a picked folder or a read-only local program), a product the jury can run and check, PL/EN, zero spend, and to carry on through the build himself. This version applies that to the first spec draft (same day), which recommended a local Node.js app with no packages; that recommendation stays, and a browser version of the same engine is added so the jury can run it without installing anything.
+
 ## How This Works, In Plain Language
 
-Mission Rescue is a small program that runs on Daniel's own computer and shows its screen in the browser.
+- **A mission is a folder.** Inside: the mission file (the tasks from A to Z; for each task the result file and the condition it must pass; optionally an outside effect), the work log (one line for each thing the agent reports: started, done, waiting, error, heartbeat...), and the result files the agent produced.
+- **The engine** reads those files and checks them, the same way everywhere. For each task it checks the four proof levels: did the agent declare it done, does the result file exist, does the file's fingerprint (SHA-256: a code that changes completely if one letter of the file changes) match what the agent declared and does the file pass the mission's condition, and, for outside effects, has a person confirmed it. Then it diagnoses the mission (with a reason, the facts and how sure it is) and writes the rescue plan.
+- **The engine runs inside the page.** The page can read missions from three places, always on your own device: the built-in sample missions, the missions folder on your computer through the small local program, or a folder you pick in the browser. Nothing is uploaded; the page is not allowed to send data anywhere.
+- **The small local program** (Node.js, which you already have) only shows the page and lets it read the missions folder on your computer. It cannot change anything.
+- **The sample agent** plays the agent in the demo. It reads the same rescue plan, really computes the missing results from fictional data and writes them with their fingerprints, so the change from red to green happens only because real files really passed the checks.
+- **The public demo address** (GitHub Pages, free) shows the same page with the built-in samples, so the jury can try the whole flow on a computer or phone without installing anything.
 
-- **The missions folder** is where agents keep their missions. One mission is one folder: the mission file (the list of tasks from A to Z and, for each task, what counts as proof), the work log (one line for each thing the agent reports: started, done, waiting, error...), and the result files the agent produced.
-- **The engine** reads those files and does the checking. For every task it looks for the result file, takes its fingerprint (SHA-256, a code that changes completely if even one letter of the file changes), compares it with the fingerprint the agent declared, and runs the mission's check (for example "the file must contain this text"). Only a task that passes all of that is green. Then it decides what is happening with the mission (working, stopped, waiting for a limit, waiting for Daniel) and writes the rescue plan.
-- **The local server** is a tiny program that waits on Daniel's computer, asks the engine for the answer whenever the screen asks, and serves the screen itself. It only reads files. It never sends anything to the internet and never runs agents.
-- **The screen (command center)** shows the missions list and one mission in detail, in Polish (English on a switch), with a glowing 3D status beacon.
-- **The sample mission and the sample agent** make the jury demo real: the sample agent really computes the results of tasks 4–7 from fictional data and logs them with real fingerprints, so the red-to-green change happens because the files really changed and really passed the checks.
-
-Why this shape: everything stays on Daniel's computer, needs nothing installed besides Node.js (which he already has), no accounts, no internet and no paid services. Every check happens again from the files each time he presses "Sprawdź ponownie", so the screen can never show an old, made-up state.
+Why this shape: one engine for the page, the command line and the tests, so what the jury clicks is exactly what the tests check; no accounts, no servers that hold data, no packages to install, no cost.
 
 ## The Core Journey Through the System
 
 PRD ref: `prd.md > The Core Journey`.
 
-1. Daniel double-clicks `START.cmd` (or runs `node src/server.mjs`) → the Local Server starts on his computer and the browser opens `http://127.0.0.1:4317`.
-2. The screen asks the server for the missions list → the server asks the Mission Analyzer to look into every folder in `missions/` → he sees one card per mission with its colour and "X z Y potwierdzone".
-3. He opens the sample mission → the server reads `mission.json`, `worklog.jsonl` and the result files → the Proof Engine checks every task → the Stall Detector gives the verdict → the Rescue Planner writes the plan → the screen shows it all.
-4. The sample is red: tasks 1–3 proven (files exist, fingerprints match, checks pass), task 4 only "started", and the last sign of life is older than the stall time → "Prawdopodobna awaria".
-5. He copies the resume instruction (the screen's Copy button).
-6. The sample agent (`node scripts/demo-agent.mjs`) plays the agent: it reads the same rescue plan, checks task 4's effects first, computes tasks 4–7 from the fictional data, writes the result files and appends "done" lines with their fingerprints to the work log.
-7. He presses "Sprawdź ponownie" → the screen asks the server again → everything is re-read and re-checked → 7 of 7 proven → green "Misja zakończona i potwierdzona dowodami".
-8. Limit Guardian: the screen asks the server for limits → the server reads the demo limits file and, if present, the file written by the status-line script → each number comes back with its source label; numbers typed by hand are added by the screen from the browser's own storage.
+1. Daniel opens the page: `START.cmd` starts the Local Program and opens `http://127.0.0.1:4317/app/`, or he opens the public demo address. The Command Center Screen loads the engine.
+2. He chooses a source in the Source Picker: built-in samples (Sample Builder creates the sample folders in memory from fictional data, with times relative to now), "this computer" (the Local Program's read-only missions folder), or "pick a folder" (the browser's folder picker).
+3. The Mission Analyzer lists the missions in the source and analyzes each one → the missions list shows the cards.
+4. He opens "Raport tygodniowy" → Mission Reader and Work Log Reader read the files → Proof Engine checks each task's four levels (tasks 1–3 proven; task 4's file exists but fails its condition and was never declared: uncertain effect) → Stall Detector gives "likely failure" with facts and high confidence → Rescue Planner writes the plan → the screen shows it all.
+5. He copies the instruction (Copy button).
+6. The Sample Agent (in the page for the built-in sample, or `node tools/mission-rescue.mjs demo-agent <folder>` for a folder on disk) follows the plan: checks task 4 first, redoes it because the file is incomplete, computes 5–7, writes files, appends "done" lines with SHA-256.
+7. "Sprawdź ponownie" → everything is read and checked again → 7 of 7 → green.
+8. "Test uczciwości" (built-in sample) changes a proven file → the next check finds the fingerprint mismatch → red.
+9. Limit Guardian reads the source's `limits/` files and the browser's manual entries → labelled numbers on screen.
 
 ## Stack
 
-Recommended by the agent, waiting for Daniel's OK (one "OK" covers it):
-
-- **Node.js 20 or newer** (his computer has v24.19.0), using only built-in parts: `node:http` for the local server, `node:fs` for reading files, `node:crypto` for SHA-256 fingerprints, `node:test` for tests. No packages to install, so nothing can break during installation. Docs: https://nodejs.org/docs/latest-v24.x/api/ (http, fs, crypto, test).
-- **Plain HTML, CSS and JavaScript modules** for the screen, without a framework or a build step: simpler to read and to run.
-- **three.js 0.160.0** (MIT license) for the single 3D status beacon, saved inside the project (`web/vendor/`), so it works without internet. Docs: https://threejs.org/docs/ . Tradeoff: about 0.7 MB in the repository.
-- **Claude Code status line** (official feature) as the only automatic source of limits: a small script receives the 5-hour and 7-day usage percentages and reset times from Claude Code and saves them to a file. Docs: https://code.claude.com/docs/en/statusline . The fields exist only for Pro and Max subscribers and only after the first answer in a session.
-
-Nothing in the stack needs a key, an account or money.
+- **Node.js 20+** (his computer has v24.19.0) with built-in modules only: `node:http` (Local Program), `node:fs` (reading folders), `node:test` (tests). No packages to install. Docs: https://nodejs.org/docs/latest-v24.x/api/
+- **Web Crypto** (`crypto.subtle.digest("SHA-256")`) for fingerprints, available in browsers (secure pages: `http://127.0.0.1` and `https://` count) and in Node 20+. Docs: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+- **Plain HTML, CSS and JavaScript modules**, no framework, no build step.
+- **File System Access API** (`showDirectoryPicker`) for picking a folder in Chrome and Edge on desktop, with the `<input type="file" webkitdirectory>` fallback for other desktop browsers. Phones use the built-in samples. Docs: https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker
+- **three.js 0.160.0** (MIT) for the single 3D beacon, saved in the project. Docs: https://threejs.org/docs/
+- **Fonts saved in the project** (SIL Open Font License), from the Fontsource npm packages.
+- **Claude Code status line** (official) as the only automatic source of limits. Docs: https://code.claude.com/docs/en/statusline
+- **GitHub Pages** (free for public repositories) for the public demo address. Docs: https://docs.github.com/en/pages
 
 ## Where It Runs and How Someone Tries It
 
-- **Runs on:** Daniel's computer (KompDaniela, Windows 11) or any computer with Node.js 20+. Browser: any current browser; the 3D beacon needs WebGL and falls back to a flat lamp without it.
-- **Start:** double-click `START.cmd` (Windows), or run `node src/server.mjs` in the project folder, then open `http://127.0.0.1:4317`. Options: `--port 4318`, `--missions <folder>`.
-- **Demo for the video (the jury flow):**
-  1. `node scripts/demo-reset.mjs` (puts the sample missions into `missions/` in their stopped state, with timestamps relative to now).
-  2. Start the app and open "Raport tygodniowy" → red, 3 of 7, rescue plan.
-  3. Copy the instruction, then run `node scripts/demo-agent.mjs weekly-report --delay 1500`.
-  4. Press "Sprawdź ponownie" → green, 7 of 7.
-- **Tests:** `node --test` in the project folder.
-- **Submission:** a short demo video recorded on his computer, uploaded publicly to YouTube, and a public GitHub repository with an MIT license. No deployment (optional, not chosen): the app reads local files by design.
+- **Public demo (no installation):** the GitHub Pages address of the repository, path `/app/`. Built-in samples, sample agent and "Test uczciwości" all run in the page. Works on desktop and phone browsers.
+- **On a computer with Node.js 20+:** double-click `START.cmd` (Windows) or run `node tools/server.mjs`, then open `http://127.0.0.1:4317/app/`. The "this computer" source reads `missions/` (or `--workspace <folder>`).
+- **Disk demo:** `node tools/mission-rescue.mjs demo-reset` (writes the samples to `missions/` in their stopped state), open the page, choose "this computer", open "Raport tygodniowy", then `node tools/mission-rescue.mjs demo-agent missions/weekly-report --delay 1500`, then "Sprawdź ponownie".
+- **Command-line check:** `node tools/mission-rescue.mjs check <mission folder> [--lang en] [--json]`.
+- **Tests:** `node --test`.
+- **Submission:** a demo video under 3 minutes recorded on his computer and uploaded publicly to YouTube, the public GitHub repository with an MIT license (shown in the About section), and the public demo address as an extra.
 
 ## Look and Feel
 
-Carried from `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`.
+Carried from `prd.md > Look and Feel`.
 
-- **Character:** a calm command center, clear first, attractive second: cards with generous spacing, big status words, short bold labels, no walls of text.
-- **Colour:** status colours carry meaning and always come with a text label: green = proven, yellow = waiting or unproven, red = stopped or proof failed, teal = waiting for you, grey = not started. Neutrals with a slight blue-grey bias. Light and dark themes follow the system setting.
-- **Type:** a characterful display face for big status words (Bricolage Grotesque), a highly legible body face with full Polish characters (IBM Plex Sans), a monospace face for fingerprints and file names (IBM Plex Mono). Fonts are saved inside the project so the app works offline; system fonts are the fallback.
-- **3D:** one status beacon in the mission card (a short signal-tower lamp) that glows the mission's colour and turns slowly. It sits beside the text, never on top of it, and stops moving when the system asks for reduced motion.
-- **Copy:** plain Polish, second person ("Co się stało", "Co zrobić"). English on the switch.
+- **Character:** a calm, modern command center; clear first, attractive second. Generous spacing, rounded cards with soft depth only where they mark a separate object, big status words, short bold labels.
+- **Colour:** semantic status colours with text labels (green proven, amber waiting/uncertain, red stopped/failed, teal waiting for you, slate grey not started/undetermined); neutrals with a slight blue-slate bias; light and dark themes from the system setting.
+- **Type:** a characterful display face for big status words and headings, a highly legible body face with full Polish characters, a monospace face for fingerprints and file names; all saved in the project with system fallbacks.
+- **3D:** one status beacon (a small signal-tower lamp) beside the verdict, glowing the mission's colour and slowly turning; flat lamp without WebGL; still for reduced motion.
+- **Phone first:** one column under 640 px, large tap targets, sticky actions, no sideways scrolling.
+- **Copy:** plain Polish, second person; English on the switch.
 
 ## Components
 
 ### Mission Reader
 
-Reads and validates `mission.json`: format `mission-rescue/1`, a title, optional English title, the agent's name, an optional stall time in minutes, and the tasks (unique numbers, titles, and a proof definition: a result file path inside the mission folder plus one check). Problems are reported with the file name and what is wrong.
-File: `src/engine/mission.mjs`.
-PRD ref: `prd.md > Mission Tracker`.
+Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent`, optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`). Reports problems with the file name.
+File: `app/engine/mission.mjs`. PRD ref: `prd.md > Mission Tracker`.
 
 ### Work Log Reader
 
-Reads `worklog.jsonl`, one JSON object per line: `at` (ISO time), `event` (`started`, `progress`, `done`, `waiting`, `error`, `heartbeat`, `note`), optional `task`, and event details (`proof` for done, `reason`/`until`/`question` for waiting, `message` for error). Broken lines are skipped and reported with their line number; valid lines still count.
-File: `src/engine/worklog.mjs`.
-PRD ref: `prd.md > Mission Tracker`, `prd.md > States and Boundaries`.
+Reads `worklog.jsonl`: one JSON object per line with `at` (ISO time), `event` (`started`, `progress`, `done`, `waiting`, `error`, `heartbeat`, `note`), optional `task`; `done` carries `artifact: {file, sha256}`; `waiting` carries `reason` (`limit`, `human`, `other`), optional `until` and `question`; `error` carries `message`. Broken lines are reported with their line numbers and skipped.
+File: `app/engine/worklog.mjs`. PRD ref: `prd.md > Mission Tracker`, `prd.md > States and Boundaries`.
 
 ### Proof Engine
 
-For each task, finds the latest "done" event and checks it: the declared file must be the mission's proof file, the file must exist, its SHA-256 must equal the declared one, and the mission's check must pass. Checks: `contains` (the file contains a text), `json` (a value at a path equals what is expected), `nonEmpty`. Task states: `verified`, `claimed-no-proof`, `proof-missing`, `proof-mismatch`, `check-failed`, `in-progress`, `failed`, `not-started`. It never runs commands; it only reads files.
-File: `src/engine/proof.mjs`.
-PRD ref: `prd.md > Proof Engine`.
+For each task: level 1 (latest `done` with artifact info), level 2 (the mission's artifact file exists), level 3 (SHA-256 equals the declared one, the declared file is the mission's file, and the check passes), level 4 (only with `effect`: a human confirmation for this mission, task and exact SHA-256). Task states: `proven`, `declared-no-artifact-info`, `artifact-missing`, `hash-mismatch`, `wrong-result`, `undeclared-result`, `effect-unconfirmed`, `in-progress`, `failed`, `not-started`. Never runs commands; only reads.
+File: `app/engine/proof.mjs` (fingerprints: `app/engine/hash.mjs`). PRD ref: `prd.md > Proof Engine`.
 
 ### Stall Detector
 
-Gives one verdict per mission from the task states, the events and the current time. Progress = the time of the latest proven task (or the first start, if nothing is proven yet). Activity = the time of the latest event of any kind. In order:
-1. every task verified → `complete` (green);
-2. any task with a proof problem → `proof-problem` (red);
-3. no events → `not-started` (grey);
-4. last event is an error → `likely-failure` (red), with the message;
-5. last event is waiting for a limit → `waiting-limit` (yellow), with the reset time; if the reset time passed longer ago than the stall time → `likely-failure` ("the limit came back, the agent did not");
-6. last event is waiting for a person → `waiting-human` (teal), with the question;
-7. no progress for longer than the stall time: if there was activity within the stall time → `no-progress` (red), otherwise → `likely-failure` (red: started task, silence, no reason);
-8. otherwise → `working` (yellow).
-Stall time: the mission's `stallMinutes`, default 30.
-File: `src/engine/stall.mjs`.
-PRD ref: `prd.md > Stall Detector`.
+Inputs: task results, events, now, the mission's stall time, the current task's expected time, limits. Waiting time T = max(stallMinutes, 1.5 × expectedMinutes of the current task). Progress time = the latest proven task's `done` (or the first event). Activity time = the latest event of any kind. First matching rule wins:
+1. all tasks green → `complete`;
+2. a declared task fails its proof → `proof-problem` (high);
+3. no events → `not-started`;
+4. latest meaningful event is `error` → `likely-failure` (high);
+5. latest meaningful event is `waiting` for a person → `waiting-human` (high);
+6. latest meaningful event is `waiting` for a limit: reset in the future → `waiting-limit` (high if the limits agree, else medium); reset passed more than T ago with no activity since → `likely-failure` (medium); otherwise `waiting-limit` (medium);
+7. no progress for longer than T and activity within T (heartbeats only) → `no-progress` (high if longer than 2T, else medium);
+8. silence longer than T: the plan's limit is used up (≥ 95 %) with a future reset → `waiting-limit` (medium, inferred); silence longer than 3T → `likely-failure` (high if the current task left an incomplete result file, else medium); otherwise → `undetermined` (low);
+9. otherwise → `working` (medium).
+Each verdict carries facts (last proven task and time, last signal and time, silence length, waiting time T, limit state, incomplete file) for the screen.
+File: `app/engine/stall.mjs`. PRD ref: `prd.md > Stall Detector`.
 
 ### Rescue Planner
 
-Builds the plan whenever the mission is not complete: checkpoint (the highest task number such that every task up to it is verified), missing tasks, uncertain tasks (in progress, claimed without proof, proof problems) with the exact check to run before repeating them (file to look for, check to pass), and the resume instruction in Polish and English. The instruction lists: what not to repeat, what to check first and how, what to do next in order, and the logging rule (each finished task gets a "done" line with its file and SHA-256).
-File: `src/engine/rescue.mjs`.
-PRD ref: `prd.md > Mission Rescue`.
+When not complete: checkpoint (highest task with every task up to it green), remaining tasks with actions `check-first` (in progress, undeclared result, failed proof, unconfirmed or claimed outside effect), `do` (not started), `confirm` (outside effect waiting for a person), each with exact checks and per-outcome steps; plus the resume instruction text in Polish and English (what not to repeat, what to check first, what to do next, how to log results with SHA-256, how to log waiting). Also the machine-readable plan used by the Sample Agent.
+File: `app/engine/rescue.mjs`. PRD ref: `prd.md > Mission Rescue`.
 
 ### Limit Guardian
 
-Reads `data/limits.demo.json` (label DEMO) and `data/limits.auto.json` (written by the status-line script; label ZWERYFIKOWANE AUTOMATYCZNIE while younger than 30 minutes, then NIEAKTUALNE with its age). The screen adds limits typed by hand from the browser's storage (label RĘCZNE). Each entry: plan name, window (5h, 7d), percent used, reset time, source, capture time.
-The status-line script `tools/claude-statusline.mjs` reads Claude Code's status-line JSON from its input, takes `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at`), writes `data/limits.auto.json`, and prints a one-line status. Without those fields it writes nothing.
-Files: `src/engine/limits.mjs`, `tools/claude-statusline.mjs`.
-PRD ref: `prd.md > Limit Guardian`.
+Reads `limits/*.json` in the source (each: `source` = `demo` or `auto`, `capturedAt`, `plans[]` with `plan`, `window`, `usedPercent`, `resetsAt`), and manual entries from the page. Labels: DEMO, RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE (auto, captured ≤ 30 minutes ago), NIEAKTUALNE (auto older than 30 minutes, or any entry whose reset time has passed). The status-line script `tools/claude-statusline.mjs` reads Claude Code's status-line JSON on its input and writes `limits/limits.auto.json` from `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at` in Unix seconds); without those fields it writes nothing.
+Files: `app/engine/limits.mjs`, `tools/claude-statusline.mjs`. PRD ref: `prd.md > Limit Guardian`.
 
 ### Mission Analyzer
 
-Puts it together for one mission folder (reader → log → proofs → verdict → rescue) and for the list (a short summary per folder). A folder that cannot be read becomes a card with the problem; it never breaks the list.
-File: `src/engine/analyze.mjs`.
-PRD ref: `prd.md > The Core Journey`, `prd.md > States and Boundaries`.
+Lists the missions of a source (folders with `mission.json`, or the source itself if it is one mission) and analyzes one mission end to end. A mission that cannot be read becomes a card with its problems; it never breaks the list.
+File: `app/engine/analyze.mjs`. PRD ref: `prd.md > The Core Journey`, `prd.md > States and Boundaries`.
 
-### Local Server
+### Sources
 
-`node:http` on `127.0.0.1:4317` (only this computer can connect). Routes: `GET /` and the screen's files from `web/`; `GET /api/missions`; `GET /api/missions/<id>`; `GET /api/limits`. Read-only, JSON with `Cache-Control: no-store`, mission ids limited to folder names inside the missions folder (no `..`), unknown paths → 404.
-File: `src/server.mjs`.
-PRD ref: `prd.md > States and Boundaries` (privacy and boundaries).
+One small interface (`list`, `readBytes`, `readText`, plus `write` for the sample agent where allowed): memory folder (built-in samples, tests) `app/engine/memory-source.mjs`; browser sources (Local Program over HTTP, picked folder via File System Access or `webkitdirectory`) `app/sources-browser.mjs`; disk folder for Node `tools/fs-source.mjs`. Paths are checked to stay inside the source (`app/engine/paths.mjs`).
+PRD ref: `prd.md > Mission Tracker`.
+
+### Sample Builder and Sample Agent
+
+`app/demo/weekly-report.mjs`: fictional orders of a fictional shop and the 7 tasks' real computations (load, validate, daily totals, summary, chart data, self-test, final report with all fingerprints). `app/demo/samples.mjs`: builds the sample workspace (the jury mission stopped after task 3 with an incomplete task-4 file; waiting for a limit; waiting for you; no progress; undetermined; outside effect; a broken mission file; demo limits) with times relative to now. `app/demo/sample-agent.mjs`: follows the rescue plan through the engine and writes results and log lines. Used by the page, by `demo-reset` and `demo-agent`, and by the tests.
+PRD ref: `prd.md > Demo and Self-Check`.
 
 ### Command Center Screen
 
-`web/index.html`, `web/app.mjs` (asks the server, draws the missions list and the mission view, `#/m/<id>` in the address for the open mission), `web/i18n.mjs` (all Polish and English texts, including every verdict's "Co się stało" and "Co zrobić"), `web/styles.css`, `web/beacon.mjs` (the 3D beacon, loaded after the first draw, with a flat fallback). Buttons: open mission, back, "Sprawdź ponownie", Copy (clipboard, with a select-the-text fallback), PL/EN, add a manual limit.
+`app/index.html`, `app/main.mjs` (source switch, missions list, mission view, re-check, Copy with fallback, sample buttons, manual limits, human confirmation of outside effects, PL/EN, `#/m/<id>` routing), `app/i18n.mjs` (all texts in Polish and English, also used by the command line), `app/styles.css`, `app/beacon.mjs`. A Content Security Policy allows the page to load only its own files and to connect only to its own address.
 PRD ref: `prd.md > Screens and Layout`, `prd.md > Polish Command Center`, `prd.md > Look and Feel`.
 
-### Sample Missions and the Sample Agent
+### Local Program
 
-- `samples/weekly-report/`: the jury mission "Raport tygodniowy z danych testowych" (fictional orders of a fictional shop) with 7 tasks: read the data, validate it, compute totals, write the summary, prepare chart data, self-check the results, write the final report. Each task's result is computed by `src/demo/tasks.mjs` from the fictional input, and each has a real check.
-- Small extra samples for the other verdicts: waiting for a limit, waiting for you, no progress.
-- `scripts/demo-reset.mjs`: rebuilds `missions/` from the samples: runs tasks 1–3 for real, writes their files and "done" lines with real fingerprints, then a "started" line for task 4, with times relative to now (silence of about two hours).
-- `scripts/demo-agent.mjs <mission> [--delay ms]`: reads the mission's rescue plan through the engine, checks the uncertain task's effects first (if the file is there and passes, it only logs it; otherwise it redoes the task), then computes the missing tasks in order and logs each with its fingerprint. Labelled everywhere as a sample agent.
-PRD ref: `prd.md > What We're Building`, `prd.md > Mission Rescue`.
+`tools/server.mjs`: `node:http` on `127.0.0.1:4317`; serves the repository's `index.html` and `app/`, and the workspace read-only under `/workspace/` with `/workspace/index.json` listing its folders and files; `Cache-Control: no-store`; refuses paths outside, hidden files and anything but GET/HEAD.
+PRD ref: `prd.md > Mission Tracker`, `prd.md > States and Boundaries`.
+
+### Command-Line Tool
+
+`tools/mission-rescue.mjs`: `check <folder>` (verdict, levels, rescue instruction; `--json`, `--lang`), `demo-reset [--workspace]`, `demo-agent <folder> [--delay ms]`. Exit code 0 when complete, 1 when not complete, 2 on input errors.
+PRD ref: `prd.md > Demo and Self-Check`.
 
 ### Agent Protocol Guide
 
-`docs/AGENT_PROTOCOL.md` (English and Polish): how any agent writes the mission file and the work log so Mission Rescue can check it, with a copy-paste example.
+`docs/AGENT_PROTOCOL.md` (English and Polish): how any agent writes the mission file and the work log, with examples.
 PRD ref: `prd.md > What We're Building`.
 
 ## Data Model
 
 | Data | Where it lives | Updated by | When Daniel comes back |
 |---|---|---|---|
-| Mission (tasks, proofs) | `missions/<id>/mission.json` | the agent (or demo-reset) | re-read on every check |
-| Work log | `missions/<id>/worklog.jsonl` | the agent appends lines | re-read on every check |
-| Results (proof files) | `missions/<id>/out/…` | the agent | re-read and re-fingerprinted on every check |
-| Fictional input data | `missions/<id>/input/…` | demo-reset | unchanged |
-| Demo limits | `data/limits.demo.json` | shipped with the app | unchanged |
-| Automatic limits | `data/limits.auto.json` | the status-line script | re-read; label depends on age |
-| Manual limits | browser storage (`mr.manualLimits`) | the screen's form | stays in this browser only |
+| Mission | `<mission>/mission.json` | the agent (or demo-reset) | read again on every check |
+| Work log | `<mission>/worklog.jsonl` | the agent appends lines | read again on every check |
+| Results | `<mission>/out/…` | the agent | read and fingerprinted again on every check |
+| Limits | `<workspace>/limits/*.json` | shipped demo file; status-line script | read again; label depends on age |
+| Manual limits | browser storage `mr.manualLimits` | the page | that browser only |
+| Human confirmations | browser storage `mr.confirmations` (mission, task, SHA-256, time) | the page | that browser only; void if the file changes |
+| Built-in samples | page memory | the page and the sample agent | rebuilt on reload or "Przywróć przykład" |
 
-Mission Rescue itself writes nothing about missions. `missions/` and `data/limits.auto.json` are kept out of git; samples are in git.
+`missions/` and `limits.auto.json` are not committed.
 
 ## File Structure
 
 ```
-mission-rescue/                (project folder: 05-basics-learn-ai)
-├── START.cmd                  # Windows: start the server and open the browser
-├── package.json               # name, Node version, npm scripts (no dependencies)
-├── README.md                  # English + Polish: what it is, how to run, how to demo
-├── LICENSE                    # MIT
-├── src/
-│   ├── server.mjs             # Local Server
-│   ├── engine/
-│   │   ├── mission.mjs        # Mission Reader
-│   │   ├── worklog.mjs        # Work Log Reader
-│   │   ├── proof.mjs          # Proof Engine
-│   │   ├── stall.mjs          # Stall Detector
-│   │   ├── rescue.mjs         # Rescue Planner
-│   │   ├── limits.mjs         # Limit Guardian (reading)
-│   │   ├── analyze.mjs        # Mission Analyzer
-│   │   └── files.mjs          # safe file access inside a mission folder
-│   └── demo/
-│       └── tasks.mjs          # the 7 sample tasks' real computations
-├── web/
-│   ├── index.html
-│   ├── app.mjs                # Command Center Screen
-│   ├── i18n.mjs               # Polish and English texts
+mission-rescue/
+├── index.html                  # GitHub Pages entry: forwards to app/
+├── .nojekyll                   # GitHub Pages serves files as they are
+├── START.cmd                   # Windows: start the Local Program and open the page
+├── package.json                # scripts only, no dependencies
+├── README.md                   # English and Polish
+├── LICENSE                     # MIT
+├── app/
+│   ├── index.html              # Command Center Screen
+│   ├── main.mjs                # screen logic
+│   ├── i18n.mjs                # Polish and English texts
 │   ├── styles.css
-│   ├── beacon.mjs             # 3D status beacon + fallback
-│   ├── fonts/                 # Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono (OFL)
-│   └── vendor/three.module.min.js   # three.js 0.160.0 (MIT)
-├── samples/                   # sample missions (fictional data)
-├── missions/                  # working missions (created by demo-reset; not in git)
-├── data/limits.demo.json      # demo limits (limits.auto.json is not in git)
-├── scripts/
-│   ├── demo-reset.mjs
-│   └── demo-agent.mjs
-├── tools/claude-statusline.mjs
+│   ├── beacon.mjs              # 3D beacon + flat fallback
+│   ├── sources-browser.mjs     # Local Program / picked folder sources
+│   ├── engine/                 # the shared engine (page, command line, tests)
+│   │   ├── paths.mjs  hash.mjs  memory-source.mjs
+│   │   ├── mission.mjs  worklog.mjs  proof.mjs
+│   │   ├── stall.mjs  rescue.mjs  limits.mjs  analyze.mjs
+│   ├── demo/
+│   │   ├── weekly-report.mjs   # fictional data + the 7 tasks
+│   │   ├── samples.mjs         # sample workspace builder
+│   │   └── sample-agent.mjs    # follows the rescue plan
+│   ├── fonts/                  # woff2 + OFL licences
+│   └── vendor/                 # three.module.min.js + LICENSE
+├── tools/
+│   ├── server.mjs              # Local Program (read-only)
+│   ├── fs-source.mjs           # disk source for Node
+│   ├── mission-rescue.mjs      # check / demo-reset / demo-agent
+│   └── claude-statusline.mjs   # Claude Code status line → limits file
 ├── docs/AGENT_PROTOCOL.md
-├── test/                      # node --test
-└── devpost/                   # Devpost learning workspace (scope, prd, spec, checklist, app map)
+├── test/                       # node --test
+├── missions/                   # local workspace (demo-reset; not committed)
+└── devpost/                    # scope, prd, spec, checklist, HTML companions, app map
 ```
 
 ## External Services and Dependencies
 
-- **None at runtime.** No network calls, no keys, no accounts, no cost.
-- **three.js 0.160.0**, vendored file, MIT: https://github.com/mrdoob/three.js/blob/dev/LICENSE . Downloaded once from the npm registry during the build.
-- **Fonts** (SIL Open Font License), vendored: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono (Google Fonts sources).
-- **Claude Code status line** (optional, local): Claude Code runs our script with JSON on its input; documented fields `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, `rate_limits.seven_day.resets_at` (reset times in Unix seconds). https://code.claude.com/docs/en/statusline
+- **Runtime network calls: none.** The page loads only its own files; the Content Security Policy blocks connections to other addresses.
+- **GitHub Pages** hosts the public copy of the static page (free for public repositories). It never receives mission files: those are read inside the visitor's browser.
+- **three.js 0.160.0** (MIT, https://github.com/mrdoob/three.js/blob/dev/LICENSE) and **fonts** (OFL), downloaded once from the npm registry and committed.
+- **Claude Code status line** (optional, local): fields `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, `rate_limits.seven_day.resets_at`; present only for Pro and Max subscribers after the first response in a session. https://code.claude.com/docs/en/statusline
 
 ## Important Failure Modes
 
-- **Broken mission file** → that mission's card says "Nie mogę przeczytać misji" with the file name and the reason; the other missions still work.
-- **Broken lines in the work log** → skipped and listed with line numbers under the mission; the verdict uses the valid lines.
-- **No WebGL** → a flat glowing lamp in the same colour instead of the 3D beacon.
-- **Clipboard blocked** → the instruction text gets selected so it can be copied by hand.
-- **Port 4317 busy** → the server says so in plain words and how to start it on another port.
+- **Broken mission file or log lines** → the card lists the problems with file name and line number; the rest still works.
+- **Folder picker not available** (Firefox, Safari, phones) → the `webkitdirectory` fallback on desktop; on phones only the built-in samples, with a short explanation.
+- **No WebGL** → a flat lamp in the same colour.
+- **Clipboard blocked** → the instruction text is selected for manual copying.
+- **Port 4317 busy** → the Local Program says so and how to use `--port`.
 
 ## What Was Simplified and Why
 
-- **One missions folder** instead of picking any folder in the browser: a browser cannot hand a folder path to a local program; a fixed folder keeps it simple. Picking any folder would need a folder-access permission flow per browser.
-- **"Sprawdź ponownie" button** instead of watching files live: same result, visible timing, no background process.
-- **Fingerprints and simple checks** instead of running test commands: Mission Rescue never executes anything, which is safer and matches "never repeat uncertain operations blindly". Running real test suites would need sandboxing.
-- **Manual limits in the browser** instead of a settings file: no write access needed on the computer.
+- **Human confirmation for outside effects** instead of checking outside systems: independent checks need a connection per provider; the confirmation is labelled and tied to the exact file fingerprint.
+- **"Sprawdź ponownie" button** instead of live watching: same result, no background work.
+- **Fingerprints and simple conditions** instead of running test commands: Mission Rescue never executes anything, so it is safe to point at any folder.
+- **Browser storage for manual limits and confirmations** instead of writing to disk: the page never needs write access.
 - **One sample domain** (a fictional weekly report): enough to prove the kernel; real agent formats come later through adapters.
 
 ## Decisions and Open Issues
 
-Daniel's decisions (from `prd.md > Product Decisions`): green only with verified proof; detect lack of progress, not silence; tell failure from waiting; rescue writes instructions and never repeats uncertain operations blindly; limits always labelled; real red-to-green flow, not an animation; no chat automation; function and tests before looks.
+Daniel's decisions are listed in `prd.md > Product Decisions` (four proof levels; smarter stall detection with confidence; check before repeating; real end-to-end demo with failure tests; real local reading without uploads; a product the jury can run; PL/EN, subtle 3D, phone-first; zero spend).
 
-Agent recommendations waiting for Daniel's OK: local Node.js app with zero packages; one missions folder; three.js saved in the project for the beacon; port 4317; stall time 30 minutes by default; automatic limits count as verified for 30 minutes.
+Technical choices: the first draft's recommendation (local Node.js app, no packages) was kept; the browser-side engine, the folder picker, the Local Program's read-only workspace and the free GitHub Pages copy follow Daniel's 15:23 requirements (real local reading, nothing uploaded, the jury can run it). Implementation details derived from that: port 4317; waiting time T as defined in the Stall Detector; automatic limits fresh for 30 minutes.
 
-The useful unknown (Daniel's own question, 21 Oct): "Can it show my limits without me typing them and without logging in to my accounts?" Clarified: logging in to chat sites is out (terms), but Claude Code's official status line passes the 5-hour and 7-day percentages to a script; Mission Rescue saves and labels them. Check during the build: the script is tested with the documented status-line input. Using it with his real Claude Code changes his Claude Code settings, so it is done only if he agrees.
+The useful unknown (Daniel's own question, 21 Oct): "Can it show my limits without me typing them and without logging in to my accounts?" Clarified: logging in to chat sites is out (their terms), but Claude Code's official status line passes the 5-hour and 7-day percentages to a script; Mission Rescue saves and labels them. Checked during the build with the documented sample input. Connecting it to his real Claude Code changes its settings, so that is done only with his agreement.
 
-Open issues: none blocking. PRD assumptions A1–A7 are confirmed together with this spec.
+Open issues: none blocking.
