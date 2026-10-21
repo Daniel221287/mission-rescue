@@ -51,7 +51,7 @@ Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he 
   Learner check: Look at it on your phone and computer and say what you would change to make it simpler or more attractive.
   Commit: `Style the command center with PL/EN, a 3D beacon and a phone layout`
 
-- [ ] **5. Ready for others to run and check**
+- [x] **5. Ready for others to run and check**
   Becomes usable: Anyone can open the public demo, or clone the repository and run START.cmd / `node tools/server.mjs`, replay the demo from the README (English and Polish), and teach their own agent the work-log format.
   Why now: The proof of concept must stand on its own before shipping.
   PRD ref: `prd.md > What We're Building`
