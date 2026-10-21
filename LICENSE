@@ -19,8 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Third-party files in this repository keep their own licences:
-- app/vendor/three.module.min.js: three.js 0.160.0, MIT (app/vendor/three.LICENSE.txt)
-- app/fonts/*.woff2: Barlow Semi Condensed, IBM Plex Sans, IBM Plex Mono,
-  SIL Open Font License 1.1 (app/fonts/OFL-*.txt)

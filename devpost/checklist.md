@@ -84,3 +84,11 @@ Activity mode: [not started]
 
 ## Revisions
 
+- Slice 2: GitHub Pages builds for pushes from the cloud workspace started late; a build is now also requested through the GitHub API after each push, and every slice's public check waits for the new files. Deployment detail only.
+- Slice 2: the sample agent's message for a changed file ("the file changed after it was reported or holds a wrong result") was split from "the result is incomplete", so the honesty test reads correctly. The silence-threshold fact now names both of its inputs.
+- Slice 3: added the verdict "Czeka na Twoje potwierdzenie" (waiting for your confirmation). The build showed that a finished agent whose last task only needs a person's confirmation of an outside effect was otherwise shown as "working". PRD and spec updated; it adds a state and changes nothing Daniel chose.
+- Slice 3: the missions list puts what needs attention first; when several limit numbers describe the same plan and window, the most trusted one wins (verified automatically, then manual, then demo). Spec updated.
+- Slice 3: agent texts (question, message) and agent names may be given in Polish and English; broken JSON is located by the engine itself, because Node.js gives no line for some errors. The page asks for the local program only when it was opened from this computer (no failed request on the public demo).
+- Slice 4: the beacon is an industrial signal tower (stack light) whose status segment glows; "teal" statuses are shown in the signal-tower blue ("operator needed"). Fonts: Barlow Semi Condensed, IBM Plex Sans, IBM Plex Mono. Spec's Look and Feel updated.
+- Slice 5: the local program writes the sample missions on its first start when the default missions folder does not exist, so `node tools/server.mjs --open` works right after cloning on any system; LICENSE holds only the MIT text (third-party licences moved to THIRD_PARTY_NOTICES.md) so GitHub recognises it.
+

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">
+<title>Mapa aplikacji Mission Rescue</title>
+<style>
+:root { --bg:#eceff2; --surface:#fff; --ink:#142028; --muted:#55656f; --line:#d3dce1; --red:#c3332a; --green:#12733f; --blue:#1b5bc9; --amber:#925600; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0d141a; --surface:#141e26; --ink:#e6edf1; --muted:#94a5b0; --line:#263643; --red:#ff8073; --green:#5ad394; --blue:#8db3ff; --amber:#f5bd55; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+main { max-width: 820px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-size: 1.9rem; line-height: 1.1; margin: 8px 0 6px; }
+h2 { font-size: 1.25rem; margin: 28px 0 10px; }
+h3 { font-size: 1rem; margin: 0 0 4px; }
+p { margin: 0 0 10px; }
+.lead { color: var(--muted); }
+section, .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin: 12px 0; }
+code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.9em; background: color-mix(in srgb, var(--line) 45%, transparent); padding: 1px 5px; border-radius: 5px; word-break: break-word; }
+ol.route { padding-left: 22px; display: grid; gap: 12px; }
+ul { padding-left: 20px; }
+li { margin: 3px 0; }
+.flow { display: grid; gap: 8px; margin: 10px 0 4px; }
+.step { border: 1px solid var(--line); border-left: 6px solid var(--blue); border-radius: 10px; padding: 10px 12px; }
+.step.red { border-left-color: var(--red); } .step.green { border-left-color: var(--green); } .step.amber { border-left-color: var(--amber); }
+.arrow { text-align: center; color: var(--muted); line-height: 1; }
+.muted { color: var(--muted); }
+details summary { cursor: pointer; font-weight: 600; }
+a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+<p class="muted">Mapa kodu do zabrania ze sobą <span lang="en">(app map, in Polish)</span></p>
+<h1>Mapa aplikacji Mission Rescue</h1>
+<p class="lead">Mission Rescue czyta pliki misji agenta AI (<code>mission.json</code> i <code>worklog.jsonl</code>), sam sprawdza każdy wynik (odcisk SHA-256 i warunek), mówi, dlaczego praca stanęła i jak pewna jest diagnoza, i pisze plan bezpiecznego wznowienia. Zielone tylko z dowodem.</p>
+
+<section aria-labelledby="pieces">
+<h2 id="pieces">Główne części</h2>
+<ul>
+  <li><strong>Silnik</strong> <code>app/engine/</code>: czytanie misji i logu, poziomy dowodu, diagnoza zatrzymania, plan ratunkowy, limity. Ten sam kod działa w przeglądarce, w wierszu poleceń i w testach.</li>
+  <li><strong>Ekran</strong> <code>app/main.mjs</code> (logika), <code>app/i18n.mjs</code> (wszystkie teksty PL/EN), <code>app/styles.css</code> (wygląd), <code>app/beacon.mjs</code> (wieża sygnalizacyjna 3D).</li>
+  <li><strong>Przykłady</strong> <code>app/demo/</code>: fikcyjne misje liczone naprawdę i przykładowy agent.</li>
+  <li><strong>Narzędzia</strong> <code>tools/</code>: lokalny program tylko do odczytu (<code>server.mjs</code>), wiersz poleceń (<code>mission-rescue.mjs</code>), pasek stanu Claude Code (<code>claude-statusline.mjs</code>).</li>
+  <li><strong>Testy</strong> <code>test/</code>: uruchamiasz je poleceniem <code>node --test</code>.</li>
+</ul>
+<p class="muted">Bez serwera w chmurze i bez bazy danych: wszystko czyta pliki na Twoim urządzeniu.</p>
+</section>
+
+<section aria-labelledby="action">
+<h2 id="action">Jedna akcja od kliknięcia do wyniku: „Sprawdź ponownie”</h2>
+<div class="flow" role="list">
+  <div class="step" role="listitem"><h3>1. Klik „Sprawdź ponownie”</h3><p><code>app/main.mjs</code>, szukaj <code>action === 'recheck'</code>, a potem <code>async function refresh()</code>. Strona prosi silnik o świeży odczyt plików.</p></div>
+  <div class="arrow" aria-hidden="true">↓</div>
+  <div class="step amber" role="listitem"><h3>2. Odczyt misji i ocena każdego zadania</h3><p><code>app/engine/analyze.mjs</code>, <code>analyzeWorkspace</code> i <code>analyzeMission</code>, potem <code>app/engine/proof.mjs</code>, <code>judgeTask</code>: liczy SHA-256 pliku i porównuje z odciskiem zgłoszonym przez agenta, sprawdza warunek z misji.</p></div>
+  <div class="arrow" aria-hidden="true">↓</div>
+  <div class="step red" role="listitem"><h3>3. Diagnoza i plan</h3><p><code>app/engine/stall.mjs</code>, <code>diagnose</code> (werdykt, powód, fakty, pewność) i <code>app/engine/rescue.mjs</code>, <code>planRescue</code> (czego nie powtarzać, co najpierw sprawdzić, co zrobić).</p></div>
+  <div class="arrow" aria-hidden="true">↓</div>
+  <div class="step green" role="listitem"><h3>4. Wynik na ekranie</h3><p><code>app/main.mjs</code>, <code>function render()</code> rysuje werdykt, zadania i plan; <code>syncBeacon</code> w <code>app/beacon.mjs</code> zapala segment wieży w kolorze statusu.</p></div>
+</div>
+</section>
+
+<section aria-labelledby="route">
+<h2 id="route">Trasa po kodzie (3 przystanki)</h2>
+<p class="muted">Trasa referencyjna: możesz ją przejść sam w edytorze, z tymi samymi nazwami do wyszukania.</p>
+<ol class="route">
+  <li><strong><code>app/main.mjs</code>: <code>action === 'recheck'</code> i <code>refresh()</code></strong><br>Przycisk nie „wierzy” poprzedniemu wynikowi: za każdym razem czyta pliki od nowa. Dlatego po pracy przykładowego agenta zielone pojawia się dopiero po „Sprawdź ponownie”.</li>
+  <li><strong><code>app/engine/proof.mjs</code>: <code>judgeTask</code>, linia z <code>declaredSha !== actualSha</code></strong><br>Tu „zrobione” zamienia się w dowód: zgłoszenie, plik, zgodny odcisk i warunek. Test uczciwości zmienia jedną liczbę w pliku zadania 3, warunek dalej przechodzi, a odcisk już nie: stan <code>hash-mismatch</code>, czerwone.</li>
+  <li><strong><code>app/engine/stall.mjs</code>: <code>diagnose</code> i <code>waitingTimeMs</code></strong><br>Tu cisza zamienia się w werdykt: próg rośnie z długością zadania, sygnały „żyję” to nie postęp, a każda diagnoza ma powód i pewność (wysoka, średnia, niska).</li>
+</ol>
+</section>
+
+<section aria-labelledby="change">
+<h2 id="change">Chcesz to zmienić? Zacznij tutaj</h2>
+<ul>
+  <li><strong>Teksty na ekranie</strong> (polskie i angielskie): <code>app/i18n.mjs</code>, np. klucz <code>'verdict.likely-failure'</code>.</li>
+  <li><strong>Kolory, czcionki, odstępy</strong>: <code>app/styles.css</code>, zmienne na początku pliku (<code>:root</code>).</li>
+  <li><strong>Kiedy cisza jest podejrzana</strong>: pole <code>stallMinutes</code> w <code>mission.json</code> albo <code>waitingTimeMs</code> w <code>app/engine/stall.mjs</code>.</li>
+  <li><strong>Nowa przykładowa misja</strong>: lista <code>SAMPLES</code> w <code>app/demo/extra-samples.mjs</code>.</li>
+  <li><strong>Wieża sygnalizacyjna</strong>: <code>app/beacon.mjs</code> (<code>ORDER</code>, <code>pulse</code>) i płaska wersja w <code>app/styles.css</code> (<code>.beacon__seg</code>).</li>
+  <li><strong>Polecenia w terminalu</strong>: <code>tools/mission-rescue.mjs</code> (<code>check</code>, <code>demo-agent</code>, <code>honesty-test</code>, <code>demo-reset</code>).</li>
+  <li><strong>Format dla Twojego agenta</strong>: <code>docs/AGENT_PROTOCOL.md</code>.</li>
+</ul>
+</section>
+
+<section aria-labelledby="practice">
+<h2 id="practice">Praktyka do powtórzenia w innych projektach</h2>
+<p><strong>„Zrobione” to plik, który da się sprawdzić, a nie zdanie agenta.</strong> W tym projekcie wymaganie z <code>devpost/prd.md</code> („A proven file changed afterwards shows »Odcisk się nie zgadza«”) dostało test w <code>test/rescue.test.mjs</code> („honesty test: a silent edit is caught by the fingerprint…”), a ten sam efekt widać na stronie po „Teście uczciwości”: 6 z 7, czerwone.</p>
+<p>W następnym projekcie z agentem: zanim zaczniesz, zapisz dla każdego kroku, jaki plik ma powstać i jaki warunek ma spełniać. Wtedy „gotowe” możesz sprawdzić sam, w kilka sekund, zamiast pytać agenta, czy na pewno skończył.</p>
+</section>
+
+<section aria-labelledby="run">
+<h2 id="run">Jak uruchomić ponownie</h2>
+<ul>
+  <li>Windows: dwuklik <code>START.cmd</code>. Każdy system: <code>node tools/server.mjs --open</code>, strona pod <code>http://127.0.0.1:4317/app/</code>.</li>
+  <li>Bez instalacji: publiczne demo <code>https://daniel221287.github.io/mission-rescue/</code>.</li>
+  <li>Testy: <code>node --test</code>.</li>
+</ul>
+<details><summary>O tej mapie</summary>
+<p>Zdjęcie kodu z commita <code>b496e71</code> (21.10.2026). Kod może się później zmienić; nazwy funkcji do wyszukania są stabilniejsze niż numery linii.</p>
+</details>
+</section>
+</main>
+</body>
+</html>

@@ -165,6 +165,7 @@ mission-rescue/
 ├── package.json                # scripts only, no dependencies
 ├── README.md                   # English and Polish
 ├── LICENSE                     # MIT
+├── THIRD_PARTY_NOTICES.md      # three.js (MIT) and the fonts (OFL)
 ├── app/
 │   ├── index.html              # Command Center Screen
 │   ├── main.mjs                # screen logic

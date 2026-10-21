@@ -70,7 +70,7 @@ A mission is a folder with `mission.json` (the tasks, each with its result file 
 
 ## Built with
 
-Plain JavaScript modules shared by the page and Node.js (no build step, no runtime packages), Web Crypto SHA-256, [three.js](https://threejs.org) 0.160.0 (MIT) for the signal tower, and the fonts Barlow Semi Condensed, IBM Plex Sans and IBM Plex Mono (SIL Open Font License), all saved in the repository. Built by Daniel during Devpost Learn *Build With AI: Basics*, with Claude as the coding agent; the plan, requirements and build log are in [`devpost/`](devpost/).
+Plain JavaScript modules shared by the page and Node.js (no build step, no runtime packages), Web Crypto SHA-256, [three.js](https://threejs.org) 0.160.0 (MIT) for the signal tower, and the fonts Barlow Semi Condensed, IBM Plex Sans and IBM Plex Mono (SIL Open Font License), all saved in the repository ([third-party notices](THIRD_PARTY_NOTICES.md)). Built by Daniel during Devpost Learn *Build With AI: Basics*, with Claude as the coding agent; the plan, requirements and build log are in [`devpost/`](devpost/).
 
 ---
 
