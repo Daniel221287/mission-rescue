@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan Czytnika Roboty Agentów</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: one phone-first reading column; sticky bar with draft status and PL/EN switch; plan sections in order; scope as Now / Later / Cut reveals */
+:root{
+  --bg:#eef2f4;--surface:#ffffff;--ink:#14212b;--muted:#536475;--line:#d2dbe2;
+  --accent:#0c6a73;--accent-soft:#ddeff0;--on-accent:#ffffff;
+  --ok:#1b7f46;--warn:#a2670f;--bad:#b83224;
+  --ok-bg:#e0f2e7;--warn-bg:#faeed7;--bad-bg:#f7e0dc;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d141a;--surface:#141f28;--ink:#e3eaef;--muted:#96a7b5;--line:#263541;
+  --accent:#5dc1ca;--accent-soft:#10343a;--on-accent:#081a1d;
+  --ok:#52c684;--warn:#e5ac4d;--bad:#ef7163;
+  --ok-bg:#112f1f;--warn-bg:#342712;--bad-bg:#3a1b17;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d141a;--surface:#141f28;--ink:#e3eaef;--muted:#96a7b5;--line:#263541;
+  --accent:#5dc1ca;--accent-soft:#10343a;--on-accent:#081a1d;
+  --ok:#52c684;--warn:#e5ac4d;--bad:#ef7163;
+  --ok-bg:#112f1f;--warn-bg:#342712;--bad-bg:#3a1b17;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.lang-pl .en,.lang-en .pl{display:none}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-in,.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{padding-block:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.crumb{flex:1 1 auto;min-width:0;font:600 12px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12px/1 var(--mono);letter-spacing:.03em;padding:6px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface);white-space:nowrap}
+.chip.draft{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+.chip.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-bg)}
+.switch{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.switch button{font:600 13px/1 var(--mono);padding:9px 13px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{padding-block:22px 48px;display:grid;gap:30px}
+.hero{display:grid;gap:12px}
+h1{margin:0;font:800 clamp(2rem,7.5vw,2.8rem)/1.05 var(--display);letter-spacing:-.01em;text-wrap:balance}
+h1 small{display:block;margin-top:6px;font:600 .95rem/1.3 var(--body);color:var(--muted);letter-spacing:0}
+h2{margin:0 0 10px;font:600 1.3rem/1.25 var(--display);text-wrap:balance}
+.lede{margin:0;font-size:1.12rem;max-width:62ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+section{min-width:0}
+p{margin:0 0 10px;max-width:65ch}
+p:last-child{margin-bottom:0}
+strong{font-weight:600}
+.diagram{margin:0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow-x:auto}
+.diagram svg{display:block;width:100%;max-width:520px;height:auto;margin:0 auto}
+.diagram figcaption{margin-top:8px;font-size:13px;color:var(--muted);text-align:center}
+.d-box{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.d-app{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.d-proof{fill:var(--bg);stroke:var(--accent);stroke-width:1.5;stroke-dasharray:6 4}
+.d-line{stroke:var(--muted);stroke-width:1.5}
+.d-head{fill:var(--muted)}
+.d-agent{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.d-t{font-family:var(--display);font-weight:600;font-size:15px;fill:var(--ink)}
+.d-s{font-family:var(--body);font-size:12.5px;fill:var(--muted)}
+.d-r{font-family:var(--body);font-size:13px;fill:var(--ink)}
+.mid{text-anchor:middle}.end{text-anchor:end}
+.d-ok{fill:var(--ok)}.d-warn{fill:var(--warn)}.d-bad{fill:var(--bad)}.d-wait{fill:var(--accent)}
+.d-track{fill:var(--line)}.d-fill{fill:var(--accent)}
+.kernel{padding:16px;border:1.5px solid var(--accent);border-radius:14px;background:var(--accent-soft)}
+.kernel .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.kernel h2{margin:0}
+.kernel .big{font-size:1.12rem;font-weight:600}
+.note{font-size:14px;color:var(--muted)}
+ul,ol{margin:0;padding-left:22px;display:grid;gap:8px;max-width:65ch}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:600 14px/1 var(--mono)}
+.steps li>span{min-width:0;padding-top:1px}
+blockquote{margin:0 0 12px;font:600 1.2rem/1.4 var(--display);max-width:60ch}
+blockquote::before{content:"„";color:var(--accent)}
+blockquote::after{content:"”";color:var(--accent)}
+.scope{display:grid;gap:10px}
+details{border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+summary{cursor:pointer;list-style:none;padding:13px 14px;display:flex;align-items:center;gap:10px;font-weight:600}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";margin-left:auto;font:600 18px/1 var(--mono);color:var(--muted)}
+details[open] summary::after{content:"–"}
+details[open] summary{border-bottom:1px solid var(--line)}
+details ul{padding:12px 14px 14px 34px}
+.sw{width:12px;height:12px;border-radius:3px;flex:none}
+.sw.now{background:var(--ok)}.sw.later{background:var(--warn)}.sw.cut{background:var(--bad)}
+.count{font:500 12px/1 var(--mono);color:var(--muted)}
+.ask{padding:16px;border:1.5px dashed var(--accent);border-radius:14px}
+.ask ol{font-size:1.05rem}
+footer{font:500 12px/1.6 var(--mono);color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div id="page" class="lang-pl">
+<div class="bar"><div class="bar-in">
+  <span class="crumb"><span class="pl">Basics · plan (scope)</span><span class="en">Basics · scope</span></span>
+  <span class="chip ok"><span class="pl">zatwierdzony</span><span class="en">approved</span></span>
+  <span class="switch" role="group" aria-label="Język / Language">
+    <button type="button" id="lang-pl" data-set-lang="pl" aria-pressed="true">PL</button>
+    <button type="button" id="lang-en" data-set-lang="en" aria-pressed="false">EN</button>
+  </span>
+</div></div>
+
+<main class="wrap">
+<header class="hero">
+  <h1>Czytnik Roboty Agentów<small><span class="pl">po angielsku: Agent Work Reader</span><span class="en">Agent Work Reader</span></small></h1>
+  <p class="lede pl"><strong>Ładna, przejrzysta aplikacja.</strong> Podpinasz swoich agentów AI i na jednej liście, takiej jak u Was w zespole, widzisz, co każdy zrobił, <strong>kto stanął w połowie</strong> i ile zostało limitów. Bez wpisywania i bez logowania.</p>
+  <p class="lede en"><strong>A nice, clear app.</strong> Daniel plugs in his AI agents and sees, in one list like the one his team already keeps, what each agent did, <strong>which one stopped halfway</strong>, and how much of his plan limits is left. Nothing to type, no logins.</p>
+  <div class="meta">
+    <span class="chip">⏰ <span class="pl">termin: pon 26.10, 22:00</span><span class="en">due: Mon 26 Oct, 22:00 (Warsaw)</span></span>
+    <span class="chip">⏱️ <span class="pl">2–4 h pracy</span><span class="en">2–4 h of work</span></span>
+    <span class="chip">🎬 <span class="pl">krótki film</span><span class="en">short demo video</span></span>
+    <span class="chip">🌐 <span class="pl">publiczne repo</span><span class="en">public repo</span></span>
+  </div>
+</header>
+
+<section>
+  <h2>🗺️ <span class="pl">Jak to działa</span><span class="en">How it works</span></h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 360 440" role="img" aria-labelledby="dg-title">
+      <title id="dg-title">Ty otwierasz aplikację, podpinasz agentów i ich pliki, aplikacja pokazuje spis roboty i limity; dowodem jest krótki film. / You open the app, plug in the agents and their files, the app shows the work list and the limits; a short video is the proof.</title>
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="d-head"/></marker></defs>
+      <rect x="12" y="12" width="150" height="58" rx="10" class="d-box"/>
+      <text x="87" y="37" class="d-t mid pl">Ty</text><text x="87" y="37" class="d-t mid en">You</text>
+      <text x="87" y="57" class="d-s mid">Daniel</text>
+      <rect x="198" y="12" width="150" height="58" rx="10" class="d-box"/>
+      <circle cx="245" cy="31" r="8" class="d-agent"/><circle cx="273" cy="31" r="8" class="d-agent"/><circle cx="301" cy="31" r="8" class="d-agent"/>
+      <text x="273" y="58" class="d-s mid pl">agenci + ich pliki</text><text x="273" y="58" class="d-s mid en">agents + their files</text>
+      <line x1="87" y1="70" x2="87" y2="104" class="d-line" marker-end="url(#arr)"/>
+      <text x="95" y="92" class="d-s pl">otwierasz</text><text x="95" y="92" class="d-s en">opens it</text>
+      <line x1="273" y1="70" x2="273" y2="104" class="d-line" marker-end="url(#arr)"/>
+      <text x="265" y="92" class="d-s end pl">podpinasz raz</text><text x="265" y="92" class="d-s end en">plugs in once</text>
+      <rect x="12" y="108" width="336" height="66" rx="12" class="d-app"/>
+      <text x="180" y="136" class="d-t mid pl">Czytnik Roboty Agentów</text><text x="180" y="136" class="d-t mid en">Agent Work Reader</text>
+      <text x="180" y="158" class="d-s mid pl">ładna, przejrzysta aplikacja · po polsku</text><text x="180" y="158" class="d-s mid en">a nice, clear app · in Polish</text>
+      <line x1="112" y1="174" x2="112" y2="202" class="d-line" marker-end="url(#arr)"/>
+      <line x1="286" y1="174" x2="286" y2="202" class="d-line" marker-end="url(#arr)"/>
+      <rect x="12" y="206" width="200" height="132" rx="10" class="d-box"/>
+      <text x="26" y="230" class="d-t pl">Spis roboty</text><text x="26" y="230" class="d-t en">Work list</text>
+      <circle cx="32" cy="252" r="6" class="d-ok"/><text x="46" y="257" class="d-r pl">zrobione</text><text x="46" y="257" class="d-r en">done</text>
+      <circle cx="32" cy="274" r="6" class="d-warn"/><text x="46" y="279" class="d-r pl">w toku</text><text x="46" y="279" class="d-r en">in progress</text>
+      <circle cx="32" cy="296" r="6" class="d-bad"/><text x="46" y="301" class="d-r pl">stanął w połowie</text><text x="46" y="301" class="d-r en">stopped halfway</text>
+      <circle cx="32" cy="318" r="6" class="d-wait"/><text x="46" y="323" class="d-r pl">czeka na Ciebie</text><text x="46" y="323" class="d-r en">waiting for you</text>
+      <rect x="224" y="206" width="124" height="132" rx="10" class="d-box"/>
+      <text x="238" y="230" class="d-t pl">Limity</text><text x="238" y="230" class="d-t en">Limits</text>
+      <text x="238" y="256" class="d-s">5 h</text>
+      <rect x="238" y="262" width="96" height="8" rx="4" class="d-track"/><rect x="238" y="262" width="58" height="8" rx="4" class="d-fill"/>
+      <text x="238" y="292" class="d-s pl">7 dni</text><text x="238" y="292" class="d-s en">7 days</text>
+      <rect x="238" y="298" width="96" height="8" rx="4" class="d-track"/><rect x="238" y="298" width="30" height="8" rx="4" class="d-fill"/>
+      <text x="238" y="326" class="d-s pl">% i odnowienie</text><text x="238" y="326" class="d-s en">% and reset</text>
+      <line x1="180" y1="340" x2="180" y2="364" class="d-line" marker-end="url(#arr)"/>
+      <text x="188" y="357" class="d-s pl">dowód</text><text x="188" y="357" class="d-s en">proof</text>
+      <rect x="12" y="368" width="336" height="60" rx="12" class="d-proof"/>
+      <text x="180" y="392" class="d-t mid pl">Krótki film</text><text x="180" y="392" class="d-t mid en">Short video</text>
+      <text x="180" y="414" class="d-s mid pl">otwierasz → podpinasz → jest spis</text><text x="180" y="414" class="d-s mid en">open → plug in → the list is there</text>
+    </svg>
+    <figcaption><span class="pl">Paski limitów na rysunku są poglądowe, to nie są prawdziwe liczby.</span><span class="en">The limit bars in the drawing are illustrative, not real numbers.</span></figcaption>
+  </figure>
+</section>
+
+<section class="kernel">
+  <div class="head">
+    <h2>💎 <span class="pl">Rdzeń</span><span class="en">The kernel</span></h2>
+    <span class="chip ok"><span class="pl">Twoimi słowami</span><span class="en">in his words</span></span>
+  </div>
+  <p class="big pl">„Najbardziej mnie wkurza, jak przerywa robotę, a miał misję od A do Z: kończy tylko część, a później czeka nie wiadomo na co.”</p>
+  <p class="big en">"What annoys me most is when it stops working although it had a mission from A to Z: it finishes only part of it, and then waits for who knows what."</p>
+  <p class="pl"><strong>Serce czytnika: łapie agentów, którzy stanęli w połowie.</strong> Agent miał misję od A do Z, zrobił tylko część i ucichł, nie mówiąc, na co czeka? Czytnik od razu pokazuje to na czerwono: <strong>ile zrobił</strong> (np. 3 z 7 kroków) i <strong>od kiedy jest cisza</strong>.</p>
+  <p class="en"><strong>The heart of the reader: it catches agents that stopped halfway.</strong> An agent had a mission from A to Z, finished only part of it and went quiet without saying what it is waiting for? The reader shows it at once, in red: <strong>how far it got</strong> (for example 3 of 7 steps) and <strong>how long it has been silent</strong>.</p>
+  <p class="pl">I wszystko tak, jak chcesz: <strong>„prosta w obsłudze i przyciągająca wzrok”</strong>, po polsku, dla kogoś, kto nie programuje. Narzędzia, które dziś widziałem (skrypty do paska stanu, liczniki w terminalu), są dla programistów, po angielsku, i liczą zużycie, a nie niedokończone misje.</p>
+  <p class="en">All of it the way he wants it: <strong>"simple to use and attractive"</strong>, in Polish, for someone who does not program. The tools we came across (status-line scripts, command-line usage trackers) are built for programmers, in English, and they count usage, not unfinished missions.</p>
+</section>
+
+<section>
+  <h2>👤 <span class="pl">Dla kogo</span><span class="en">Who it's for</span></h2>
+  <p class="pl"><strong>Dla Ciebie.</strong> Prowadzisz kilku agentów AI na zwykłych abonamentach (Claude, ChatGPT i inni) i wieczorem zlecasz im zadania do teamu: kod, szukanie, sprawdzanie. Zostawiają po sobie masę plików („mamy tego masę”), głównie po angielsku. Dziś, żeby wiedzieć, co się stało, pytasz agentów albo grzebiesz w plikach, a limity sprawdzasz ręcznie.</p>
+  <p class="en"><strong>Daniel.</strong> He runs several AI agents on his regular subscriptions (Claude, ChatGPT and others) and hands them tasks for the team in the evening: writing software, searching, checking. They leave a lot of files behind ("we have a ton of that"), mostly in English, which he does not read comfortably. Today he finds out what happened by asking the agents or digging through those files, and he checks his plan limits by hand.</p>
+  <p class="note pl">Później: inni ludzie, którzy też prowadzą kilku agentów.</p>
+  <p class="note en">Later: other people who run several AI agents.</p>
+</section>
+
+<section>
+  <h2>🔁 <span class="pl">Pętla</span><span class="en">The core loop</span></h2>
+  <ol class="steps pl">
+    <li><span><strong>Otwierasz</strong> aplikację.</span></li>
+    <li><span><strong>Raz podpinasz agentów:</strong> wskazujesz pliki, w których zapisują swoją robotę.</span></li>
+    <li><span><strong>Widzisz jedną listę:</strong> każdy agent, co zrobił, co gotowe, co w toku, co czeka na Ciebie i <strong>kto stanął w połowie</strong>, nie mówiąc dlaczego. Obok limity: ile zużyto i kiedy się odnowią.</span></li>
+    <li><span><strong>Wracasz,</strong> gdy agenci popracują nad Twoimi zadaniami: jeden rzut oka i wiesz, co się stało i co zlecić dalej.</span></li>
+  </ol>
+  <ol class="steps en">
+    <li><span><strong>He opens</strong> the app.</span></li>
+    <li><span><strong>He plugs in his agents once,</strong> by pointing it at the files where they record their work.</span></li>
+    <li><span><strong>He sees one list:</strong> each agent, what it did, what is done, in progress, waiting for him, and <strong>which agent stopped halfway</strong> without saying why. Beside it: how much of each plan's limit is used and when it resets.</span></li>
+    <li><span><strong>He comes back</strong> whenever the agents have worked on his tasks: one glance shows what happened and what to hand out next.</span></li>
+  </ol>
+</section>
+
+<section>
+  <h2>🎨 <span class="pl">Klimat</span><span class="en">Inspiration &amp; identity</span></h2>
+  <ul class="pl">
+    <li><strong>„Ładna, przejrzysta aplikacja”</strong> (Twoje słowa).</li>
+    <li><strong>Spis taki, jaki macie u siebie:</strong> listy agentów i zadań, które już prowadzicie z Twoimi agentami.</li>
+    <li><strong>Wszystko po polsku.</strong></li>
+    <li><strong>Do przeskanowania wzrokiem:</strong> zielony, żółty, czerwony, liczby, krótkie pogrubione etykiety, zero ścian tekstu.</li>
+    <li><strong>W naszym nowoczesnym stylu,</strong> jak nasze demka 3D (Ciao Bella, BRYŁA). Ile 3D zmieści się w 2–4 h tak, żeby nie zasłonić listy, zdecydujesz w PRD. Styl budujemy od nowa, bo starego kodu nie wolno użyć.</li>
+  </ul>
+  <ul class="en">
+    <li><strong>"A nice, clear app"</strong> (his words).</li>
+    <li><strong>A list "like the ones we have at home":</strong> the agent and task lists that Daniel and his AI agents already keep.</li>
+    <li><strong>Polish everywhere.</strong></li>
+    <li><strong>Scannable at a glance:</strong> green, yellow and red, numbers, short bold labels, no walls of text. Daniel reads visually.</li>
+    <li><strong>"In our modern style"</strong> (his words): the team's 3D demo websites (Ciao Bella, BRYŁA). How much 3D fits into 2–4 hours without hiding the list is a PRD decision. The style is rebuilt from scratch, because old code cannot be reused.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>❤️ <span class="pl">Dlaczego to dla Ciebie ważne</span><span class="en">Why this matters to Daniel</span></h2>
+  <p class="pl">Twoimi słowami: czytanie workspace'ów, „mamy tego masę”. Budujesz GnyPciora od ponad dwóch miesięcy i codziennie pracujesz z agentami. Chcesz, żeby informacja była „normalnie”, sama, a najważniejsza jest <strong>„robota agentów, oczywiście”</strong>.</p>
+  <p class="en">In his words: reading the workspaces, "we have a ton of that". He has been building his agent system, GnyPcior, for more than two months and works with agents every day. He wants the information to be there "normally", by itself, and the agents' work comes first: <strong>"The agents' work, of course."</strong></p>
+</section>
+
+<section>
+  <h2>🎬 <span class="pl">Kiedy to „działa”</span><span class="en">What "working" looks like</span></h2>
+  <blockquote class="pl">Otwieramy ładną, przejrzystą aplikację, podpinam agentów… musi to być jakiś spis, taki, jaki mamy u siebie.</blockquote>
+  <blockquote class="en">We open a nice, clear app, I plug in the agents… it has to be some kind of list, like the ones we have at home.</blockquote>
+  <p class="pl"><strong>Moment „wow”:</strong> podpinasz agentów i ich robota od razu pojawia się jako czytelna lista po polsku (zielone, żółte, czerwone). Jeden agent świeci na czerwono: <strong>stanął w połowie misji</strong> (np. 3 z 7 kroków) i od 2 godzin milczy, nie pisząc, na co czeka. Obok pasek limitów pokazuje, ile zostało. Da się to pokazać w około minutę.</p>
+  <p class="en"><strong>The moment:</strong> he plugs in the agents and their work appears at once as a clear list in Polish (green, yellow, red). One agent glows red: <strong>it stopped halfway through its mission</strong> (for example 3 of 7 steps) and has been silent for two hours without saying what it is waiting for. The limits panel shows how much is left. It can be shown in about a minute.</p>
+</section>
+
+<section class="scope">
+  <h2>✂️ <span class="pl">Zakres</span><span class="en">Scope</span></h2>
+  <details open>
+    <summary><span class="sw now"></span><span class="pl">Teraz, w tej wersji</span><span class="en">Now: the proof of concept</span><span class="count">6</span></summary>
+    <ul class="pl">
+      <li>Jedna strona po polsku, otwierana w przeglądarce na Twoim kompie. Nic nie wychodzi do internetu, zero logowania.</li>
+      <li><strong>„Podepnij agenta”:</strong> wskazujesz plik albo folder, w którym agent zapisuje robotę. Agent pojawia się na liście.</li>
+      <li><strong>Lista:</strong> każdy agent, jego misja i zadania w kolorach (zrobione, w toku, czeka na Ciebie), a na górze grupa „czeka na Ciebie”.</li>
+      <li><strong>Łapacz przestojów (serce):</strong> agent, którego misja nie jest skończona i który milczy dłużej niż ustalony czas, nie mówiąc, na co czeka, robi się czerwony. Widać, ile zrobił (kroki zrobione ze wszystkich) i od kiedy jest cisza.</li>
+      <li><strong>Limity:</strong> procent zużycia i godzina odnowienia dla każdego abonamentu, z małego pliku z limitami (liczby, które podaje pasek stanu Claude Code), albo wpisane ręcznie, gdy pliku brak.</li>
+      <li>Zmyśleni przykładowi agenci i pliki w repozytorium, żeby każdy mógł to sprawdzić w minutę.</li>
+    </ul>
+    <ul class="en">
+      <li>One page in Polish that opens in the browser on his own computer. Nothing is sent anywhere; no logins.</li>
+      <li><strong>Plug in an agent:</strong> pick the file or folder where that agent records its work. The agent appears in the list.</li>
+      <li><strong>The list:</strong> each agent with its mission and tasks, coloured by status (done, in progress, waiting for you), with a "waiting for you" group on top.</li>
+      <li><strong>Stall catcher (the heart):</strong> an agent whose mission is not finished, and which has been silent longer than a set time without saying what it waits for, turns red, showing how far it got (steps done out of all) and how long it has been silent.</li>
+      <li><strong>Limits panel:</strong> percent used and reset time for each plan, read from a small limits file (the numbers Claude Code's status line provides), or typed by hand when there is no file.</li>
+      <li>Fictional sample agents and files in the repository, so anyone can try it in a minute.</li>
+    </ul>
+  </details>
+  <details>
+    <summary><span class="sw later"></span><span class="pl">Później</span><span class="en">Later</span><span class="count">7</span></summary>
+    <ul class="pl">
+      <li>Gotowy skrypt do paska stanu, który sam zapisuje plik z limitami; czytanie lokalnych logów Codexa.</li>
+      <li>Samo odświeżanie, gdy pliki się zmienią.</li>
+      <li>Widok na telefon.</li>
+      <li>Powiadomienie na telefon, gdy agent stanie w połowie.</li>
+      <li>Więcej agentów i narzędzi (Gemini, Grok i inne).</li>
+      <li>Krótkie streszczenia po polsku notatek pisanych po angielsku (potrzebny model AI; najpierw znaleźć dozwoloną, darmową drogę).</li>
+      <li>Udostępnienie innym: najpierw darmowy okres, potem płatne korzystanie (Twój pomysł z początku).</li>
+    </ul>
+    <ul class="en">
+      <li>A ready-made status-line script that writes the limits file automatically; reading Codex's local logs.</li>
+      <li>Refreshing by itself when the files change.</li>
+      <li>A phone view.</li>
+      <li>A phone notification when an agent stalls.</li>
+      <li>More agents and tools (Gemini, Grok and others).</li>
+      <li>Short Polish summaries of notes written in English (needs an AI model; first find an allowed, free route).</li>
+      <li>Sharing with other people: a free period first, then paid use (his idea from the start).</li>
+    </ul>
+  </details>
+  <details>
+    <summary><span class="sw cut"></span><span class="pl">Wycinamy, z powodem</span><span class="en">Explicitly cut, with reasons</span><span class="count">5</span></summary>
+    <ul class="pl">
+      <li><strong>Logowanie do claude.ai, chatgpt.com i innych czatów</strong>, żeby czytać dane: regulaminy zabraniają automatycznego dostępu.</li>
+      <li><strong>Sterowanie agentami i wysyłanie im zadań</strong> (wcześniejszy „super-agent”), także samo wznawianie agenta, który stanął: ten sam problem z regulaminem przy czatach i dużo za duże na 2–4 h.</li>
+      <li><strong>Prawdziwe logi, dane osobowe i sekrety</strong> w publicznym repozytorium: tylko zmyślone przykłady.</li>
+      <li><strong>Płatne API:</strong> Twoja zasada, tylko abonamenty.</li>
+      <li><strong>Stary kod GnyPciora:</strong> konkurs wymaga nowego kodu od zera (pomysł może być stary).</li>
+    </ul>
+    <ul class="en">
+      <li><strong>Logging in to claude.ai, chatgpt.com or other chat sites</strong> to read data: their terms forbid automated access.</li>
+      <li><strong>Steering the agents or sending them tasks</strong> (the earlier "super agent" idea), including restarting a stalled agent: the same terms problem for chat apps, and far bigger than a 2-4 hour proof of concept.</li>
+      <li><strong>Real logs, personal data or secrets</strong> in the public repository: fictional samples only.</li>
+      <li><strong>Paid APIs:</strong> Daniel's rule is subscriptions only.</li>
+      <li><strong>Old GnyPcior code:</strong> this hackathon needs new code from an empty folder (the idea can be old).</li>
+    </ul>
+  </details>
+</section>
+
+<section class="ask">
+  <h2>✅ <span class="pl">Plan zatwierdzony</span><span class="en">Plan approved</span></h2>
+  <p class="big pl">„Plan lux 🫡🫡” (21.10.2026, 14:53)</p>
+  <p class="big en">"Plan lux 🫡🫡" (Daniel's approval, 21 Oct 2026, 14:53)</p>
+  <p class="note pl">Następny krok: PRD, czyli dokładnie co widzisz i co robisz na każdym ekranie.</p>
+  <p class="note en">Next step: the PRD, which defines exactly what he sees and does on each screen.</p>
+  <p class="note pl" style="margin-top:10px">Odpowiedz w czacie, głosem. 🐼🐻</p>
+  <p class="note en" style="margin-top:10px">Answers come by voice in the chat.</p>
+</section>
+
+<footer>
+  <span class="pl">Wersja kanoniczna planu (po angielsku): devpost/scope.md · zatwierdzony 21.10.2026</span>
+  <span class="en">Canonical plan (English): devpost/scope.md · approved, 21 Oct 2026</span>
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var page=document.getElementById('page');
+  var btns=Array.prototype.slice.call(document.querySelectorAll('[data-set-lang]'));
+  function setLang(l){
+    page.classList.toggle('lang-pl',l==='pl');
+    page.classList.toggle('lang-en',l==='en');
+    document.documentElement.lang=l;
+    btns.forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-set-lang')===l));});
+    try{localStorage.setItem('scope-lang',l);}catch(e){}
+  }
+  var saved=null;
+  try{saved=localStorage.getItem('scope-lang');}catch(e){}
+  setLang(saved==='en'?'en':'pl');
+  btns.forEach(function(b){b.addEventListener('click',function(){setLang(b.getAttribute('data-set-lang'));});});
+})();
+</script>
+
+</body>
+</html>

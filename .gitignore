@@ -1,0 +1,9 @@
+# personal learning context stays out of commits (Devpost Learn 1-start)
+/devpost/learner-profile.md
+# local credentials
+.env
+.env.*
+!.env.example
+node_modules/
+skills_install.log
+/devpost/notes/
