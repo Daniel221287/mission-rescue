@@ -11,3 +11,7 @@ skills_install.log
 /.agents/
 /.claude/
 /agent/
+# local missions workspace (created by demo-reset) and automatic limits
+/missions/
+limits.auto.json
+node_modules/

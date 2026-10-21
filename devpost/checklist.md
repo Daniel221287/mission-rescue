@@ -11,7 +11,7 @@ Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he 
 
 ## Slices
 
-- [ ] **1. The jury mission tells the truth: real files, red, 3 of 7 proven**
+- [x] **1. The jury mission tells the truth: real files, red, 3 of 7 proven**
   Becomes usable: Open the page (local program or the built-in samples) and the jury mission "Raport tygodniowy" is read from real files: tasks 1–3 proven on all levels, task 4 started with an incomplete, undeclared result, tasks 5–7 not started, and a red "Prawdopodobna awaria" with its reason, facts and confidence. The command-line check prints the same.
   Why now: The kernel first (real reading, proof levels, stall diagnosis), and it bootstraps the engine, the sample builder, the local program and a first plain page.
   PRD ref: `prd.md > The Core Journey` (steps 1–5), `prd.md > Mission Tracker`, `prd.md > Proof Engine`, `prd.md > Stall Detector`

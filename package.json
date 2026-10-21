@@ -1,0 +1,17 @@
+{
+  "name": "mission-rescue",
+  "version": "0.1.0",
+  "description": "Mission Rescue: Agent Proof & Recovery. The truth about an AI agent's mission: what is really done (with proof), why it stopped, and how to resume it safely.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node tools/server.mjs --open",
+    "test": "node --test",
+    "demo:reset": "node tools/mission-rescue.mjs demo-reset",
+    "check": "node tools/mission-rescue.mjs check"
+  }
+}
