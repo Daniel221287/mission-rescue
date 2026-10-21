@@ -234,7 +234,7 @@ export function weeklyMission() {
     format: 'mission-rescue/1',
     id: 'weekly-report',
     title: { pl: 'Raport tygodniowy z danych testowych', en: 'Weekly report from test data' },
-    agent: 'Przykładowy agent (demo)',
+    agent: { pl: 'Przykładowy agent (demo)', en: 'Sample agent (demo)' },
     plan: 'ChatGPT Pro',
     stallMinutes: 30,
     demo: 'weekly-report',

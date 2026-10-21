@@ -41,7 +41,7 @@ Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he 
   Learner check: Open each extra sample and say whether the reason and the confidence make sense; add a limit by hand; confirm the outside effect in the offer sample.
   Commit: `Explain every stop and label outside effects and limits`
 
-- [ ] **4. The Polish command center: modern look, PL/EN, 3D beacon, phone-first**
+- [x] **4. The Polish command center: modern look, PL/EN, 3D beacon, phone-first**
   Becomes usable: The finished look: beautiful cards, readable statuses, "Co się stało" and "Co zrobić" everywhere, light and dark themes, PL/EN, the 3D beacon glowing the mission's colour (flat lamp without WebGL), and comfortable use on a phone.
   Why now: Daniel's rule: real operation and tests first, the look after; the screens it styles are now final.
   PRD ref: `prd.md > Look and Feel`, `prd.md > Polish Command Center`, `prd.md > Screens and Layout`

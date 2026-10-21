@@ -27,7 +27,7 @@ const SAMPLES = [
     mission: {
       id: 'menu-working',
       title: both('Tłumaczenie menu na angielski', 'Translating the menu into English'),
-      agent: 'Codex (przykład)',
+      agent: both('Codex (przykład)', 'Codex (sample)'),
       plan: 'ChatGPT Pro',
       tasks: [
         task(1, both('Spisz menu', 'Write down the menu'), 5, 'out/1-menu.md', contains('## Menu')),
@@ -50,7 +50,7 @@ const SAMPLES = [
     mission: {
       id: 'newsletter-limit',
       title: both('Newsletter dla klientów herbaciarni', "The tea shop's customer newsletter"),
-      agent: 'Claude Code (przykład)',
+      agent: both('Claude Code (przykład)', 'Claude Code (sample)'),
       plan: 'Claude Max',
       tasks: [
         task(1, both('Zbierz nowości tygodnia', "Collect the week's news"), 10, 'out/1-nowosci.md', contains('## Nowości')),
@@ -85,7 +85,7 @@ const SAMPLES = [
     mission: {
       id: 'logo-human',
       title: both('Strona wizytówka: wybór logo', 'Business card site: choosing a logo'),
-      agent: 'Codex (przykład)',
+      agent: both('Codex (przykład)', 'Codex (sample)'),
       plan: 'ChatGPT Pro',
       tasks: [
         task(1, both('Zbierz treści o firmie', 'Collect the company content'), 10, 'out/1-tresci.md', contains('## O nas')),
@@ -121,7 +121,7 @@ const SAMPLES = [
     mission: {
       id: 'catalog-noprogress',
       title: both('Opisy produktów do sklepu', 'Product descriptions for the shop'),
-      agent: 'Gemini CLI (przykład)',
+      agent: both('Gemini CLI (przykład)', 'Gemini CLI (sample)'),
       plan: 'Google AI Pro',
       tasks: [
         task(1, both('Zbierz listę produktów', 'Collect the product list'), 10, 'out/1-produkty.json', equals('count', 6)),
@@ -155,7 +155,7 @@ const SAMPLES = [
     mission: {
       id: 'invoice-undetermined',
       title: both('Zestawienie faktur za październik', 'October invoice summary'),
-      agent: 'Claude Code (przykład)',
+      agent: both('Claude Code (przykład)', 'Claude Code (sample)'),
       plan: 'Claude Pro',
       tasks: [
         task(1, both('Wczytaj listę faktur', 'Load the invoice list'), 5, 'out/1-faktury.json', equals('count', 12)),
@@ -177,7 +177,7 @@ const SAMPLES = [
     mission: {
       id: 'offer-effect',
       title: both('Oferta dla klienta wysłana e-mailem', 'A client offer sent by e-mail'),
-      agent: 'Claude Code (przykład)',
+      agent: both('Claude Code (przykład)', 'Claude Code (sample)'),
       plan: 'Claude Max',
       tasks: [
         task(1, both('Przygotuj ofertę', 'Prepare the offer'), 10, 'out/1-oferta.md', contains('## Oferta')),

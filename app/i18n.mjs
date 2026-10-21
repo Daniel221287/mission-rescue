@@ -13,6 +13,7 @@ const D = {
     'app.subtitle': 'Prawda o pracy agentów AI',
     'app.tagline': 'Misja od A do Z. Zielone tylko z dowodem.',
     'lang.switch': 'EN',
+    'lang.switch.label': 'Switch to English',
     'lang.name': 'Polski',
     'nav.back': '← Wszystkie misje',
     'btn.recheck': 'Sprawdź ponownie',
@@ -50,7 +51,9 @@ const D = {
     'mission.agent': 'Agent: {agent}',
     'mission.plan': 'Plan: {plan}',
     'mission.checked': 'Sprawdzone {at}',
-    'mission.demo-badge': 'PRZYKŁAD · dane fikcyjne',
+    'mission.demo-badge': 'Przykład z fikcyjnymi danymi',
+    'list.count': '{n}',
+    'list.folder': 'Folder {dir}',
     'section.what': 'Co się stało',
     'section.todo': 'Co zrobić',
     'section.facts': 'Na czym opieram diagnozę',
@@ -114,7 +117,7 @@ const D = {
     'fact.waiting-time': 'Próg ciszy dla tego zadania: {ms} (próg misji)',
     'fact.waiting-time.expected': 'Próg ciszy dla tego zadania: {ms} (dłuższy z dwóch: próg misji {minimum} min albo 1,5 × {expected} min przewidzianych na zadanie)',
     'fact.partial-file': 'Plik zadania {task} istnieje, ale jest niedokończony: {file}',
-    'fact.limit': 'Limit {plan} {window}: {used}% · odnowienie {until} · {labelText}',
+    'fact.limit': 'Limit {plan} {window}: {used}%, odnowienie {until} ({labelText})',
     'fact.limit-unknown': 'Brak aktualnych danych o limicie planu {plan}',
     'fact.proven-count': '{proven} z {total} zadań z dowodem',
     'fact.proof-state': 'Zadanie {task}: {stateText} ({file})',
@@ -223,7 +226,7 @@ const D = {
     'demo.local.reset': 'Przywrócenie przykładu na dysku:',
     'log.empty': 'Log jest pusty.',
     'footer.privacy': 'Mission Rescue czyta pliki na Twoim urządzeniu. Niczego nie wysyła i niczego nie zmienia w misjach.',
-    'footer.source': 'Kod: github.com/Daniel221287/mission-rescue',
+    'footer.source': 'Kod źródłowy na GitHubie (licencja MIT)',
     'time.just-now': 'przed chwilą',
     'time.ago': '{d} temu',
     'time.in': 'za {d}',
@@ -232,6 +235,7 @@ const D = {
     'app.subtitle': "The truth about AI agents' work",
     'app.tagline': 'A mission from A to Z. Green only with proof.',
     'lang.switch': 'PL',
+    'lang.switch.label': 'Przełącz na polski',
     'lang.name': 'English',
     'nav.back': '← All missions',
     'btn.recheck': 'Check again',
@@ -269,7 +273,9 @@ const D = {
     'mission.agent': 'Agent: {agent}',
     'mission.plan': 'Plan: {plan}',
     'mission.checked': 'Checked {at}',
-    'mission.demo-badge': 'SAMPLE · fictional data',
+    'mission.demo-badge': 'Sample with fictional data',
+    'list.count': '{n}',
+    'list.folder': 'Folder {dir}',
     'section.what': 'What happened',
     'section.todo': 'What to do',
     'section.facts': 'What the diagnosis is based on',
@@ -333,7 +339,7 @@ const D = {
     'fact.waiting-time': 'Silence threshold for this task: {ms} (the mission threshold)',
     'fact.waiting-time.expected': 'Silence threshold for this task: {ms} (the longer of the mission threshold, {minimum} min, and 1.5 × the task\'s expected {expected} min)',
     'fact.partial-file': "Task {task}'s file exists but is unfinished: {file}",
-    'fact.limit': '{plan} {window} limit: {used}% · reset {until} · {labelText}',
+    'fact.limit': '{plan} {window} limit: {used}%, reset {until} ({labelText})',
     'fact.limit-unknown': 'No current limit data for the {plan} plan',
     'fact.proven-count': '{proven} of {total} tasks proven',
     'fact.proof-state': 'Task {task}: {stateText} ({file})',
@@ -442,7 +448,7 @@ const D = {
     'demo.local.reset': 'Restore the sample on disk:',
     'log.empty': 'The log is empty.',
     'footer.privacy': 'Mission Rescue reads files on your device. It sends nothing and never changes your missions.',
-    'footer.source': 'Code: github.com/Daniel221287/mission-rescue',
+    'footer.source': 'Source code on GitHub (MIT licence)',
     'time.just-now': 'just now',
     'time.ago': '{d} ago',
     'time.in': 'in {d}',
@@ -582,7 +588,7 @@ export function limitLabelText(lang, entry, nowMs = Date.now()) {
   const why = entry.staleReason === 'reset-passed'
     ? t(lang, 'limit.stale.reset-passed')
     : t(lang, 'limit.stale.old-capture', { age: fmtDuration(nowMs - (entry.capturedAtMs ?? nowMs), lang) });
-  return `${base} · ${why}`;
+  return `${base} (${why})`;
 }
 
 export function describeFact(lang, fact, nowMs = Date.now()) {

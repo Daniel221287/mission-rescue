@@ -2,6 +2,7 @@
 // spec.md > Command Center Screen · prd.md > Screens and Layout
 
 import { buildSampleWorkspace } from './demo/samples.mjs';
+import { syncBeacon } from './beacon.mjs';
 import { runSampleAgent, tamperSample } from './demo/sample-agent.mjs';
 import { analyzeWorkspace } from './engine/analyze.mjs';
 import { subSource } from './engine/paths.mjs';
@@ -112,11 +113,14 @@ function renderHeader() {
   return `
   <header class="top">
     <div class="top__brand">
-      <a class="brand" href="#/">Mission Rescue</a>
-      <span class="brand__sub">${esc(L('app.subtitle'))}</span>
+      <img class="brand__icon" src="icon.svg" alt="" width="34" height="34">
+      <div class="brand__text">
+        <a class="brand" href="#/">Mission Rescue</a>
+        <span class="brand__sub">${esc(L('app.subtitle'))}</span>
+      </div>
     </div>
     <div class="top__actions">
-      <button class="btn btn--ghost" data-action="lang" aria-label="${esc(L('lang.switch'))}">${esc(L('lang.switch'))}</button>
+      <button class="btn btn--lang" data-action="lang" lang="${state.lang === 'pl' ? 'en' : 'pl'}" aria-label="${esc(L('lang.switch.label'))}">${esc(L('lang.switch'))}</button>
     </div>
   </header>
   <section class="sources" aria-label="${esc(L('src.label'))}">
@@ -128,28 +132,47 @@ function renderHeader() {
   </section>`;
 }
 
+function confidenceMeter(level) {
+  return `<span class="conf conf--${esc(level)}" aria-hidden="true"><i></i><i></i><i></i></span>`;
+}
+
+// The flat signal tower: shown at once, kept when WebGL is missing, covered by the 3D one.
+function beacon(color) {
+  const segments = ['red', 'amber', 'green', 'teal']
+    .map((name) => `<span class="beacon__seg beacon__seg--${name}${name === color ? ' is-lit' : ''}"></span>`)
+    .join('');
+  return `<div class="beacon" data-color="${esc(color)}" aria-hidden="true"><div class="beacon__flat"><span class="beacon__cap"></span>${segments}<span class="beacon__pole"></span></div></div>`;
+}
+
 function verdictBlock(report, { compact = false } = {}) {
   const v = report.verdict;
   const now = Date.now();
   const confidence = `${L('conf.label')}: ${L(`conf.${v.confidence}`)}`;
   if (compact) {
-    return `${chip(v.color, L(`verdict.${v.code}`))} <span class="muted small">${esc(confidence)}</span>`;
+    return `${chip(v.color, L(`verdict.${v.code}`))} <span class="muted small is-${esc(v.color)}">${confidenceMeter(v.confidence)}${esc(confidence)}</span>`;
   }
   return `
-  <div class="verdict verdict--${esc(v.color)}">
+  <section class="verdict verdict--${esc(v.color)}" aria-labelledby="verdict-title">
+    <div class="verdict__lamp">${beacon(v.color)}</div>
     <div class="verdict__head">
-      <div class="beacon beacon--${esc(v.color)}" aria-hidden="true"><span></span></div>
-      <div>
-        <h2 class="verdict__title">${esc(L(`verdict.${v.code}`))}</h2>
-        <p class="verdict__conf">${esc(confidence)}</p>
+      <h2 class="verdict__title" id="verdict-title">${esc(L(`verdict.${v.code}`))}</h2>
+      <p class="verdict__conf">${confidenceMeter(v.confidence)}${esc(confidence)}</p>
+    </div>
+    <div class="verdict__body">
+      <div class="verdict__grid">
+        <div><h3>${esc(L('section.what'))}</h3><p>${esc(describeReason(state.lang, v, now))}</p></div>
+        <div><h3>${esc(L('section.todo'))}</h3><p>${esc(L(`todo.${v.code}`))}</p></div>
       </div>
+      ${v.facts.length ? `<details class="facts"${v.code === 'complete' ? '' : ' open'}><summary>${esc(L('section.facts'))}</summary><ul>${v.facts.map((f) => `<li>${esc(describeFact(state.lang, f, now))}</li>`).join('')}</ul></details>` : ''}
     </div>
-    <div class="verdict__grid">
-      <div><h3>${esc(L('section.what'))}</h3><p>${esc(describeReason(state.lang, v, now))}</p></div>
-      <div><h3>${esc(L('section.todo'))}</h3><p>${esc(L(`todo.${v.code}`))}</p></div>
-    </div>
-    ${v.facts.length ? `<details class="facts" open><summary>${esc(L('section.facts'))}</summary><ul>${v.facts.map((f) => `<li>${esc(describeFact(state.lang, f, now))}</li>`).join('')}</ul></details>` : ''}
-  </div>`;
+  </section>`;
+}
+
+// One cell per task, coloured by its proof state.
+function proofStrip(report) {
+  if (!report.ok || !report.tasks.length) return '';
+  const label = L('mission.proven', report.counts);
+  return `<span class="strip" role="img" aria-label="${esc(label)}">${report.tasks.map((t) => `<span class="is-${esc(t.color)}" title="${esc(`${t.id}. ${title2(t.title)}: ${stateText(state.lang, t.state)}`)}"></span>`).join('')}</span>`;
 }
 
 function renderList() {
@@ -158,15 +181,16 @@ function renderList() {
   if (!result.missions.length) return `<section class="panel"><p>${esc(L('list.empty'))}</p></section>`;
   return `
   <section class="missions" aria-label="${esc(L('list.title'))}">
-    <h2 class="section-title">${esc(L('list.title'))}</h2>
+    <h2 class="section-title">${esc(L('list.title'))} <span class="muted">${esc(L('list.count', { n: result.missions.length }))}</span></h2>
     <ul class="cards">
       ${result.missions.map((m) => `
       <li class="card card--${esc(m.verdict.color)}">
         <a class="card__link" href="#/m/${encodeURIComponent(m.dir)}">
-          <span class="card__title">${esc(m.ok ? title2(m.title) : m.dir)}</span>
-          ${m.demo ? `<span class="badge">${esc(L('mission.demo-badge'))}</span>` : ''}
+          <span class="card__lamp" aria-hidden="true"></span>
+          <span class="card__title">${esc(m.ok ? title2(m.title) : L('list.folder', { dir: m.dir }))}</span>
           <span class="card__verdict">${verdictBlock(m, { compact: true })}</span>
-          ${m.ok ? `${bar(m.counts.proven, m.counts.total, m.verdict.color)}<span class="card__count">${esc(L('mission.proven', m.counts))}</span>` : `<span class="muted">${esc(describeProblem(state.lang, m.problems[0] || { code: 'missing', file: 'mission.json' }))}</span>`}
+          ${m.ok ? `${proofStrip(m)}<span class="card__count">${esc(L('mission.proven', m.counts))}</span>` : `<span class="card__problem">${esc(describeProblem(state.lang, m.problems[0] || { code: 'missing', file: 'mission.json' }))}</span>`}
+          ${m.demo ? `<span class="badge">${esc(L('mission.demo-badge'))}</span>` : ''}
         </a>
       </li>`).join('')}
     </ul>
@@ -318,9 +342,9 @@ function renderMission(dir) {
   <section class="mission">
     <a class="back" href="#/">${esc(L('nav.back'))}</a>
     <div class="mission__head">
-      <h1 class="mission__title">${esc(report.ok ? title2(report.title) : report.dir)}</h1>
+      <h1 class="mission__title">${esc(report.ok ? title2(report.title) : L('list.folder', { dir: report.dir }))}</h1>
       ${report.demo ? `<span class="badge">${esc(L('mission.demo-badge'))}</span>` : ''}
-      ${report.ok ? `<p class="mission__meta">${report.agent ? esc(L('mission.agent', { agent: report.agent })) : ''}${report.plan ? ` · ${esc(L('mission.plan', { plan: report.plan }))}` : ''}</p>` : ''}
+      ${report.ok && (report.agent || report.plan) ? `<p class="mission__meta">${report.agent ? `<span>${esc(L('mission.agent', { agent: textIn(state.lang, report.agent) }))}</span>` : ''}${report.plan ? `<span>${esc(L('mission.plan', { plan: report.plan }))}</span>` : ''}</p>` : ''}
     </div>
     ${verdictBlock(report)}
     <div class="actions">
@@ -331,8 +355,8 @@ function renderMission(dir) {
     ${renderDemo(report)}
     ${report.ok ? `
     <section class="panel">
-      <h2 class="section-title">${esc(L('section.tasks'))} <span class="muted small">${esc(L('mission.proven', report.counts))}</span></h2>
-      ${bar(report.counts.proven, report.counts.total, report.verdict.color)}
+      <h2 class="section-title">${esc(L('section.tasks'))} <span class="muted">${esc(L('mission.proven', report.counts))}</span></h2>
+      ${proofStrip(report)}
       <ol class="tasks">${report.tasks.map(renderTask).join('')}</ol>
     </section>
     <section class="panel">
@@ -356,7 +380,7 @@ function renderLimits() {
     <li class="limit limit--${esc(e.label)}">
       <div class="limit__head"><strong>${esc(e.plan)}</strong> <span class="muted">${esc(e.window)}</span> ${chip(e.label === 'stale' ? 'grey' : e.label === 'auto-verified' ? 'green' : e.label === 'demo' ? 'teal' : 'amber', limitLabelText(state.lang, e, now), 'limit__label')}</div>
       <div class="bar bar--${e.usedPercent >= 95 ? 'red' : e.usedPercent >= 75 ? 'amber' : 'green'}"><span data-w="${Math.min(100, e.usedPercent)}"></span></div>
-      <div class="limit__meta"><span>${esc(String(e.usedPercent))}%</span>${e.resetsAt ? ` · <span>${esc(L('limit.resets', { at: `${fmtTime(e.resetsAt, state.lang, now)} (${fmtRelative(e.resetsAt, state.lang, now)})` }))}</span>` : ''}${e.capturedAt && e.source !== 'manual' && e.staleReason !== 'old-capture' ? ` · <span class="muted">${esc(L('limit.captured', { at: fmtRelative(e.capturedAt, state.lang, now) }))}</span>` : ''}${e.source === 'manual' ? ` <button class="btn btn--ghost btn--small" data-action="remove-limit" data-index="${e.manualIndex}" aria-label="${esc(L('limit.manual.remove', { plan: e.plan, window: e.window }))}">${esc(L('btn.remove'))}</button>` : ''}</div>
+      <div class="limit__meta"><span class="limit__used">${esc(String(e.usedPercent))}%</span>${e.resetsAt ? `<span>${esc(L('limit.resets', { at: `${fmtTime(e.resetsAt, state.lang, now)} (${fmtRelative(e.resetsAt, state.lang, now)})` }))}</span>` : ''}${e.capturedAt && e.source !== 'manual' && e.staleReason !== 'old-capture' ? `<span>${esc(L('limit.captured', { at: fmtRelative(e.capturedAt, state.lang, now) }))}</span>` : ''}${e.source === 'manual' ? `<button class="btn btn--ghost btn--small" data-action="remove-limit" data-index="${e.manualIndex}" aria-label="${esc(L('limit.manual.remove', { plan: e.plan, window: e.window }))}">${esc(L('btn.remove'))}</button>` : ''}</div>
     </li>`).join('');
   return `
   <section class="panel limits" aria-label="${esc(L('section.limits'))}">
@@ -403,8 +427,9 @@ function render() {
         ? renderMission(r.mission)
         : renderList();
   app.innerHTML = `${renderHeader()}<main class="main" ${state.busy ? 'aria-busy="true"' : ''}>${body}</main>
-  <footer class="foot"><p>${esc(L('footer.privacy'))}</p><p class="muted">${esc(L('app.tagline'))}</p></footer>`;
+  <footer class="foot"><p class="foot__motto">${esc(L('app.tagline'))}</p><p>${esc(L('footer.privacy'))}</p><p><a href="https://github.com/Daniel221287/mission-rescue">${esc(L('footer.source'))}</a></p></footer>`;
   for (const span of app.querySelectorAll('.bar > span[data-w]')) span.style.width = `${span.dataset.w}%`;
+  syncBeacon(app);
 }
 
 // ---- events -----------------------------------------------------------------------

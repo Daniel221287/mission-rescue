@@ -182,7 +182,7 @@ export function parseMission(text) {
       format: MISSION_FORMAT,
       id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : null,
       title,
-      agent: typeof raw.agent === 'string' && raw.agent.trim() ? raw.agent.trim() : null,
+      agent: text2(raw.agent),
       plan: typeof raw.plan === 'string' && raw.plan.trim() ? raw.plan.trim() : null,
       stallMinutes: positiveNumber(raw.stallMinutes) || DEFAULT_STALL_MINUTES,
       demo: typeof raw.demo === 'string' ? raw.demo : null,

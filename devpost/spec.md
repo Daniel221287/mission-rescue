@@ -39,7 +39,7 @@ PRD ref: `prd.md > The Core Journey`.
 - **Plain HTML, CSS and JavaScript modules**, no framework, no build step.
 - **File System Access API** (`showDirectoryPicker`) for picking a folder in Chrome and Edge on desktop, with the `<input type="file" webkitdirectory>` fallback for other desktop browsers. Phones use the built-in samples. Docs: https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker
 - **three.js 0.160.0** (MIT) for the single 3D beacon, saved in the project. Docs: https://threejs.org/docs/
-- **Fonts saved in the project** (SIL Open Font License), from the Fontsource npm packages.
+- **Fonts saved in the project** (SIL Open Font License): Barlow Semi Condensed, IBM Plex Sans and IBM Plex Mono from the Fontsource npm packages (5.3.0).
 - **Claude Code status line** (official) as the only automatic source of limits. Docs: https://code.claude.com/docs/en/statusline
 - **GitHub Pages** (free for public repositories) for the public demo address. Docs: https://docs.github.com/en/pages
 
@@ -57,9 +57,9 @@ PRD ref: `prd.md > The Core Journey`.
 Carried from `prd.md > Look and Feel`.
 
 - **Character:** a calm, modern command center; clear first, attractive second. Generous spacing, rounded cards with soft depth only where they mark a separate object, big status words, short bold labels.
-- **Colour:** semantic status colours with text labels (green proven, amber waiting/uncertain, red stopped/failed, teal waiting for you, slate grey not started/undetermined); neutrals with a slight blue-slate bias; light and dark themes from the system setting.
-- **Type:** a characterful display face for big status words and headings, a highly legible body face with full Polish characters, a monospace face for fingerprints and file names; all saved in the project with system fallbacks.
-- **3D:** one status beacon (a small signal-tower lamp) beside the verdict, glowing the mission's colour and slowly turning; flat lamp without WebGL; still for reduced motion.
+- **Colour:** steel and graphite neutrals; colour is reserved for status, as on a factory signal tower (andon): green proven, amber waiting/uncertain, red stopped/failed, blue waiting for you (the andon "operator needed" colour; the code calls it teal), slate grey not started/undetermined, always with text labels; light and dark themes from the system setting. Primary buttons are ink-coloured so that no button competes with a status.
+- **Type:** Barlow Semi Condensed (signage-like, for status words and headings), IBM Plex Sans (body, full Polish characters), IBM Plex Mono (fingerprints, file names, the resume instruction); Latin and Latin Extended subsets saved in the project, with system fallbacks.
+- **3D:** one status beacon beside the verdict: a small industrial signal tower (stack light) with four segments (red, amber, green, blue) where only the segment for the mission's status glows and pulses, the light casting onto the verdict panel; it turns slowly. three.js is loaded only on the mission view, after the page is shown; a flat CSS tower of the same colours is shown first and stays without WebGL (or with data saving on); everything stands still for reduced motion. The mission list shows the same signal as a lamp strip on each card, and a proof strip with one cell per task.
 - **Phone first:** one column under 640 px, large tap targets, sticky actions, no sideways scrolling.
 - **Copy:** plain Polish, second person; English on the switch.
 
@@ -67,7 +67,7 @@ Carried from `prd.md > Look and Feel`.
 
 ### Mission Reader
 
-Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent`, optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`, where `where` reads naturally after "w" / "in", e.g. "folderze „Wysłane” w poczcie" / "the mail \"Sent\" folder"). Reports problems with the file name, and for broken JSON the line where the text stops being valid (found by the engine itself, the same in every browser and in Node.js).
+Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent` (text or `{pl, en}`), optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`, where `where` reads naturally after "w" / "in", e.g. "folderze „Wysłane” w poczcie" / "the mail \"Sent\" folder"). Reports problems with the file name, and for broken JSON the line where the text stops being valid (found by the engine itself, the same in every browser and in Node.js).
 File: `app/engine/mission.mjs`. PRD ref: `prd.md > Mission Tracker`.
 
 ### Work Log Reader

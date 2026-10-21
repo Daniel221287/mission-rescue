@@ -123,7 +123,7 @@ test('limits are labelled by where they come from: demo, manual, verified automa
   assert.equal(label('Claude Max').label, 'auto-verified');
   assert.equal(label('ChatGPT Plus').label, 'manual');
   assert.deepEqual([label('Old').label, label('Old').staleReason], ['stale', 'reset-passed']);
-  assert.equal(limitLabelText('pl', label('Old'), NOW), 'NIEAKTUALNE · odnowienie już minęło');
+  assert.equal(limitLabelText('pl', label('Old'), NOW), 'NIEAKTUALNE (odnowienie już minęło)');
   assert.equal(limitForPlan('Old', entries, NOW), null, 'an out-of-date limit is never used for a diagnosis');
   const mixed = [
     { plan: 'P', window: '5h', usedPercent: 100, resetsAtMs: NOW + 9 * MIN, label: 'demo' },
@@ -139,7 +139,7 @@ test('limits are labelled by where they come from: demo, manual, verified automa
     'limits/limits.auto.json': JSON.stringify({ source: 'auto', capturedAt: new Date(NOW - 50 * MIN).toISOString(), plans: [{ plan: 'Claude Max', window: '7d', usedPercent: 20, resetsAt: new Date(NOW + 3000 * MIN).toISOString() }] }),
   }), { now: NOW });
   assert.deepEqual([old.entries[0].label, old.entries[0].staleReason], ['stale', 'old-capture']);
-  assert.equal(limitLabelText('en', old.entries[0], NOW), 'OUT OF DATE · captured 50 min ago');
+  assert.equal(limitLabelText('en', old.entries[0], NOW), 'OUT OF DATE (captured 50 min ago)');
 });
 
 test('Claude Code status line: the documented input becomes limits.auto.json, labelled verified', async () => {
