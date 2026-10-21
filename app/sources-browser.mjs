@@ -19,7 +19,15 @@ function childrenFromPaths(paths, dir) {
   return [...seen].map(([name, kind]) => ({ name, kind })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// The local program only ever runs on this computer, so the page asks for it only when it
+// was itself opened from this computer (on the public demo there is nothing to ask).
+export function servedFromThisComputer(loc = globalThis.location) {
+  if (!loc || loc.protocol !== 'http:') return false;
+  return ['127.0.0.1', 'localhost', '[::1]', '::1'].includes(loc.hostname);
+}
+
 export async function localProgramAvailable() {
+  if (!servedFromThisComputer()) return false;
   try {
     const response = await fetch('/workspace/index.json', { cache: 'no-store' });
     return response.ok && (response.headers.get('content-type') || '').includes('json');

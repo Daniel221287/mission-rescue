@@ -23,7 +23,10 @@ const D = {
     'btn.running-agent': 'Agent pracuje…',
     'btn.honesty': 'Test uczciwości: po cichu zmień sumę w zadaniu 3',
     'btn.reset-samples': 'Przywróć przykład',
-    'btn.confirm-effect': 'Potwierdzam: sprawdziłem w systemie zewnętrznym',
+    'btn.confirm-effect': 'Potwierdzam: sprawdziłem i to się stało',
+    'btn.unconfirm-effect': 'Cofnij potwierdzenie',
+    'btn.cancel': 'Anuluj',
+    'btn.pick-again': 'Wybierz inny folder',
     'btn.add-limit': 'Dodaj limit ręcznie',
     'btn.save': 'Zapisz',
     'btn.remove': 'Usuń',
@@ -34,9 +37,12 @@ const D = {
     'src.folder': 'Wybrany folder',
     'src.samples.note': 'Wbudowane przykłady z fikcyjnymi danymi. Wszystko liczy się tu, w Twojej przeglądarce.',
     'src.local.note': 'Folder misji na tym komputerze, czytany przez lokalny program (tylko do odczytu).',
-    'src.local.unavailable': 'Lokalny program nie działa. Uruchom START.cmd albo „node tools/server.mjs”.',
+    'src.local.unavailable': 'Źródło „Ten komputer” działa po uruchomieniu START.cmd albo „node tools/server.mjs” (README).',
     'src.folder.note': 'Pliki czyta Twoja przeglądarka. Nic nie jest wysyłane.',
     'src.folder.unsupported': 'Ta przeglądarka nie umie wybrać folderu. Użyj Chrome albo Edge na komputerze.',
+    'src.folder.picked': 'Folder: {name}. Pliki czyta Twoja przeglądarka, tylko do odczytu. Nic nie jest wysyłane.',
+    'src.folder.snapshot': 'Ta przeglądarka dała kopię plików z chwili wyboru. Żeby zobaczyć zmiany, wybierz folder jeszcze raz.',
+    'src.folder.none': 'Wybierz folder z misjami (albo folder jednej misji). Pliki czyta Twoja przeglądarka. Nic nie jest wysyłane.',
     'list.title': 'Misje',
     'list.empty': 'Nie znalazłem tu żadnej misji. Misja to folder z plikiem mission.json i logiem worklog.jsonl.',
     'list.open': 'Otwórz',
@@ -68,6 +74,7 @@ const D = {
     'verdict.undetermined': 'Stan nieustalony',
     'verdict.not-started': 'Nie rozpoczęta',
     'verdict.unreadable': 'Nie mogę przeczytać misji',
+    'verdict.needs-confirmation': 'Czeka na Twoje potwierdzenie',
     'todo.complete': 'Nic. Każde zadanie ma sprawdzony dowód.',
     'todo.proof-problem': 'Nie przyjmuj tej pracy. Przekaż agentowi plan ratunkowy: najpierw sprawdzić skutki, potem poprawić wynik i zgłosić go z nowym odciskiem.',
     'todo.likely-failure': 'Przekaż agentowi plan ratunkowy poniżej. Zadań z dowodem nie powtarzaj.',
@@ -78,23 +85,28 @@ const D = {
     'todo.undetermined': 'Sprawdź ponownie za kilka minut albo zapytaj agenta, czy dalej pracuje. Plan ratunkowy jest gotowy na wszelki wypadek.',
     'todo.not-started': 'Uruchom agenta albo przekaż mu instrukcję startową.',
     'todo.unreadable': 'Popraw plik misji (szczegóły niżej) i sprawdź ponownie.',
+    'todo.needs-confirmation': 'Sprawdź sam, czy efekt naprawdę nastąpił, i potwierdź go w planie poniżej. Bez Twojego potwierdzenia misja nie będzie zielona.',
     'reason.all-proven': 'Wszystkie zadania ({total}) mają sprawdzony dowód.',
     'reason.proof-failed': 'Agent zgłosił zadanie {task} jako zrobione, ale dowód nie przechodzi: {stateText}.',
     'reason.no-events': 'Log pracy jest pusty: agent jeszcze nic nie zgłosił.',
-    'reason.error-reported': 'Agent zgłosił błąd w zadaniu {task}: „{message}”.',
+    'reason.error-reported': 'Agent zgłosił błąd w zadaniu {task}: „{message}”',
     'reason.limit-back-agent-not': 'Limit odnowił się {until}, a agent od tego czasu nie wrócił do pracy.',
     'reason.silence.partial': 'Zadanie {task} się zaczęło, jego plik wyniku jest niedokończony, a od {silence} jest cisza. Agent nie napisał, na co czeka.',
     'reason.silence.plain': 'Od {silence} jest cisza w trakcie zadania {task}, bez podanego powodu.',
-    'reason.question': 'Agent czeka na Twoją odpowiedź: „{question}”.',
+    'reason.question': 'Agent czeka na Twoją odpowiedź: „{question}”',
     'reason.agent-said-limit.yes': 'Agent napisał, że czeka na limit, a dane o limitach to potwierdzają. Odnowienie: {until}.',
     'reason.agent-said-limit.no': 'Agent napisał, że czeka na limit. Odnowienie: {until}.',
     'reason.inferred-from-limits': 'Agent nic nie napisał, ale limit {plan} ({window}) jest wykorzystany w {used}% do {until}. Najpewniej czeka na limit.',
-    'reason.waiting-other': 'Agent napisał, że czeka: „{message}”.',
+    'reason.waiting-other': 'Agent napisał, że czeka: „{message}”',
     'reason.signs-of-life-only': 'Agent daje znaki życia ({beats} wpisów), ale od {since} nie dowiózł żadnego wyniku z dowodem.',
     'reason.short-silence': 'Cisza trwa {silence}, dłużej niż oczekiwane {wait}, ale za krótko, żeby uznać to za awarię. Zadanie może po prostu dłużej trwać.',
     'reason.recent-progress': 'Ostatni postęp był niedawno ({at}).',
     'reason.recent-activity': 'Agent był aktywny niedawno ({at}).',
     'reason.unreadable': 'Pliku {file} brakuje albo jest uszkodzony.',
+    'reason.unreadable.detail': 'Nie mogę odczytać pliku misji: {detail}.',
+    'reason.confirm-effects': 'Agent dowiózł wyniki ze sprawdzonymi plikami. {taskHas} skutek poza komputerem, do sprawdzenia w {where}. Tego żaden plik nie udowodni: musi to potwierdzić człowiek.',
+    'reason.task-has.one': 'Zadanie {tasks} ma',
+    'reason.task-has.many': 'Zadania {tasks} mają',
     'fact.last-proven': 'Ostatni wynik z dowodem: zadanie {task}, {at}',
     'fact.nothing-proven': 'Żadne zadanie nie ma jeszcze dowodu',
     'fact.last-signal': 'Ostatni sygnał: {eventText}{taskPart}, {at}',
@@ -106,6 +118,7 @@ const D = {
     'fact.limit-unknown': 'Brak aktualnych danych o limicie planu {plan}',
     'fact.proven-count': '{proven} z {total} zadań z dowodem',
     'fact.proof-state': 'Zadanie {task}: {stateText} ({file})',
+    'fact.effect-where': 'Zadanie {task}: skutek do sprawdzenia w {where}',
     'task.part': ' (zadanie {task})',
     'state.proven': 'Potwierdzone',
     'state.effect-unconfirmed': 'Efekt zewnętrzny niepotwierdzony',
@@ -129,8 +142,10 @@ const D = {
     'detail.declared-sha': 'Odcisk zgłoszony',
     'detail.actual-sha': 'Odcisk policzony',
     'detail.none': 'brak',
-    'detail.where': 'Gdzie sprawdzić efekt',
+    'detail.where': 'Sprawdź efekt w',
     'detail.confirmed-by-human': 'Potwierdzone przez człowieka {at}',
+    'confirm.note': 'Potwierdzaj tylko to, co widzisz na własne oczy. Potwierdzenie dotyczy dokładnie tej wersji pliku (odcisk {sha}…) i jest zapisane tylko w tej przeglądarce.',
+    'confirm.where': 'Sprawdź w {where}.',
     'check.contains': 'zawiera „{text}”',
     'check.json': '{path} = {expected}',
     'check.nonEmpty': 'nie jest pusty',
@@ -172,6 +187,11 @@ const D = {
     'limit.form.used': 'Zużycie %',
     'limit.form.reset': 'Odnowienie',
     'limit.note': 'Mission Rescue nigdy nie loguje się do czatów, żeby czytać limity.',
+    'limit.form.title': 'Limit wpisany ręcznie',
+    'limit.form.window.other': 'inne',
+    'limit.form.hint': 'Przepisz liczby z ekranu limitów swojej usługi. Zapisują się tylko w tej przeglądarce i mają etykietę RĘCZNE.',
+    'limit.form.error': 'Podaj nazwę planu i zużycie od 0 do 100%.',
+    'limit.manual.remove': 'Usuń ręczny wpis {plan} {window}',
     'demo.agent.note': 'Przykładowy agent naprawdę liczy wyniki zadań z fikcyjnych danych i zapisuje je z odciskami SHA-256.',
     'demo.honesty.note': 'Test uczciwości po cichu zmienia sumę jednego dnia w potwierdzonym pliku. Warunek nadal przechodzi, więc złapać to może tylko odcisk SHA-256.',
     'demo.reset.note': 'Przywraca przykłady do stanu początkowego (czasy liczone od teraz).',
@@ -196,6 +216,7 @@ const D = {
     'rescue.action.confirm': 'Potwierdź (człowiek)',
     'rescue.check': 'Sprawdzenie: {file} {condition}',
     'rescue.not-needed': 'Plan nie jest potrzebny: wszystko ma dowody.',
+    'rescue.confirm-only': 'Agent skończył swoją część. Zostało potwierdzenie przez człowieka.',
     'demo.honesty.done': 'Zmieniłem po cichu sumę jednego dnia w pliku zadania 3. Naciśnij „Sprawdź ponownie”.',
     'demo.local.note': 'Na tym komputerze przykładowego agenta uruchamiasz poleceniem:',
     'demo.local.honesty': 'Test uczciwości na dysku:',
@@ -221,7 +242,10 @@ const D = {
     'btn.running-agent': 'The agent is working…',
     'btn.honesty': 'Honesty test: silently change a total in task 3',
     'btn.reset-samples': 'Restore the sample',
-    'btn.confirm-effect': 'I confirm: I checked the outside system',
+    'btn.confirm-effect': 'I confirm: I checked and it happened',
+    'btn.unconfirm-effect': 'Withdraw the confirmation',
+    'btn.cancel': 'Cancel',
+    'btn.pick-again': 'Pick another folder',
     'btn.add-limit': 'Add a limit by hand',
     'btn.save': 'Save',
     'btn.remove': 'Remove',
@@ -232,9 +256,12 @@ const D = {
     'src.folder': 'Picked folder',
     'src.samples.note': 'Built-in samples with fictional data. Everything is computed here, in your browser.',
     'src.local.note': 'The missions folder on this computer, read by the local program (read-only).',
-    'src.local.unavailable': 'The local program is not running. Start START.cmd or "node tools/server.mjs".',
+    'src.local.unavailable': '"This computer" works after you start START.cmd or "node tools/server.mjs" (see the README).',
     'src.folder.note': 'Your browser reads the files. Nothing is uploaded.',
     'src.folder.unsupported': 'This browser cannot pick a folder. Use Chrome or Edge on a computer.',
+    'src.folder.picked': 'Folder: {name}. Your browser reads the files, read-only. Nothing is uploaded.',
+    'src.folder.snapshot': 'This browser gave a copy of the files from the moment you picked them. To see changes, pick the folder again.',
+    'src.folder.none': 'Pick a folder with missions (or one mission folder). Your browser reads the files. Nothing is uploaded.',
     'list.title': 'Missions',
     'list.empty': 'No mission found here. A mission is a folder with mission.json and worklog.jsonl.',
     'list.open': 'Open',
@@ -266,6 +293,7 @@ const D = {
     'verdict.undetermined': 'Undetermined',
     'verdict.not-started': 'Not started',
     'verdict.unreadable': 'Cannot read the mission',
+    'verdict.needs-confirmation': 'Waiting for your confirmation',
     'todo.complete': 'Nothing. Every task has a verified proof.',
     'todo.proof-problem': 'Do not accept this work. Give the agent the rescue plan: check the effects first, then fix the result and report it with a new fingerprint.',
     'todo.likely-failure': 'Give the agent the rescue plan below. Do not repeat tasks that are proven.',
@@ -276,23 +304,28 @@ const D = {
     'todo.undetermined': 'Check again in a few minutes or ask the agent whether it is still working. The rescue plan is ready just in case.',
     'todo.not-started': 'Start the agent or give it the start instruction.',
     'todo.unreadable': 'Fix the mission file (details below) and check again.',
+    'todo.needs-confirmation': 'Check for yourself that the effect really happened, then confirm it in the plan below. Without your confirmation the mission will not turn green.',
     'reason.all-proven': 'All tasks ({total}) have a verified proof.',
     'reason.proof-failed': 'The agent reported task {task} as done, but the proof fails: {stateText}.',
     'reason.no-events': 'The work log is empty: the agent has not reported anything yet.',
-    'reason.error-reported': 'The agent reported an error in task {task}: "{message}".',
+    'reason.error-reported': 'The agent reported an error in task {task}: "{message}"',
     'reason.limit-back-agent-not': 'The limit came back {until}, and the agent has not resumed since.',
     'reason.silence.partial': 'Task {task} started, its result file is unfinished, and there has been silence for {silence}. The agent did not say what it is waiting for.',
     'reason.silence.plain': 'Silence for {silence} during task {task}, with no stated reason.',
-    'reason.question': 'The agent is waiting for your answer: "{question}".',
+    'reason.question': 'The agent is waiting for your answer: "{question}"',
     'reason.agent-said-limit.yes': 'The agent said it is waiting for a limit, and the limit data agrees. Reset: {until}.',
     'reason.agent-said-limit.no': 'The agent said it is waiting for a limit. Reset: {until}.',
     'reason.inferred-from-limits': 'The agent said nothing, but the {plan} limit ({window}) is {used}% used until {until}. It is most likely waiting for the limit.',
-    'reason.waiting-other': 'The agent said it is waiting: "{message}".',
+    'reason.waiting-other': 'The agent said it is waiting: "{message}"',
     'reason.signs-of-life-only': 'The agent keeps sending signs of life ({beats} entries), but has not delivered any proven result for {since}.',
     'reason.short-silence': 'Silence for {silence}, longer than the expected {wait}, but too short to call it a failure. The task may simply take longer.',
     'reason.recent-progress': 'The last progress was recent ({at}).',
     'reason.recent-activity': 'The agent was active recently ({at}).',
     'reason.unreadable': 'The file {file} is missing or broken.',
+    'reason.unreadable.detail': 'Cannot read the mission file: {detail}.',
+    'reason.confirm-effects': 'The agent delivered results with verified files. {taskHas} an effect outside this computer, to be checked in {where}. No file can prove that: a person has to confirm it.',
+    'reason.task-has.one': 'Task {tasks} has',
+    'reason.task-has.many': 'Tasks {tasks} have',
     'fact.last-proven': 'Last proven result: task {task}, {at}',
     'fact.nothing-proven': 'No task has a proof yet',
     'fact.last-signal': 'Last signal: {eventText}{taskPart}, {at}',
@@ -304,6 +337,7 @@ const D = {
     'fact.limit-unknown': 'No current limit data for the {plan} plan',
     'fact.proven-count': '{proven} of {total} tasks proven',
     'fact.proof-state': 'Task {task}: {stateText} ({file})',
+    'fact.effect-where': 'Task {task}: effect to check in {where}',
     'task.part': ' (task {task})',
     'state.proven': 'Proven',
     'state.effect-unconfirmed': 'Outside effect unconfirmed',
@@ -327,8 +361,10 @@ const D = {
     'detail.declared-sha': 'Declared fingerprint',
     'detail.actual-sha': 'Computed fingerprint',
     'detail.none': 'none',
-    'detail.where': 'Where to check the effect',
+    'detail.where': 'Check the effect in',
     'detail.confirmed-by-human': 'Confirmed by a person {at}',
+    'confirm.note': 'Only confirm what you have seen with your own eyes. The confirmation covers exactly this version of the file (fingerprint {sha}…) and is saved only in this browser.',
+    'confirm.where': 'Check in {where}.',
     'check.contains': 'contains "{text}"',
     'check.json': '{path} = {expected}',
     'check.nonEmpty': 'is not empty',
@@ -370,6 +406,11 @@ const D = {
     'limit.form.used': 'Used %',
     'limit.form.reset': 'Reset',
     'limit.note': 'Mission Rescue never logs in to chat sites to read limits.',
+    'limit.form.title': 'A limit entered by hand',
+    'limit.form.window.other': 'other',
+    'limit.form.hint': "Copy the numbers from your service's usage screen. They are saved only in this browser and labelled MANUAL.",
+    'limit.form.error': 'Enter the plan name and a usage from 0 to 100%.',
+    'limit.manual.remove': 'Remove the manual entry {plan} {window}',
     'demo.agent.note': "The sample agent really computes the tasks' results from fictional data and writes them with SHA-256 fingerprints.",
     'demo.honesty.note': "The honesty test silently changes one day's total in a proven file. The condition still passes, so only the SHA-256 fingerprint can catch it.",
     'demo.reset.note': 'Restores the samples to their starting state (times counted from now).',
@@ -394,6 +435,7 @@ const D = {
     'rescue.action.confirm': 'Confirm (a person)',
     'rescue.check': 'Check: {file} {condition}',
     'rescue.not-needed': 'No plan needed: everything is proven.',
+    'rescue.confirm-only': "The agent has finished its part. A person's confirmation is still needed.",
     'demo.honesty.done': "I silently changed one day's total in task 3's file. Press \"Check again\".",
     'demo.local.note': 'On this computer, run the sample agent with:',
     'demo.local.honesty': 'Honesty test on disk:',
@@ -411,6 +453,13 @@ export function t(lang, key, params = {}) {
   const table = D[lang] || D.pl;
   const template = table[key] ?? D.pl[key] ?? key;
   return template.replace(/\{(\w+)\}/g, (_, name) => (params[name] == null ? '' : String(params[name])));
+}
+
+// Free text from an agent or a mission: a string, or {pl, en}.
+export function textIn(lang, value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  return value[lang] || value.pl || value.en || '';
 }
 
 export function eventName(lang, event) {
@@ -502,6 +551,25 @@ export function describeReason(lang, verdict, nowMs = Date.now()) {
     case 'recent-progress':
     case 'recent-activity':
       return t(lang, `reason.${key}`, { at: time(params.at) });
+    case 'question':
+      return t(lang, 'reason.question', { question: textIn(lang, params.question) });
+    case 'unreadable':
+      return params.problem
+        ? t(lang, 'reason.unreadable.detail', { detail: describeProblem(lang, params.problem) })
+        : t(lang, 'reason.unreadable', params);
+    case 'waiting-other':
+      return t(lang, 'reason.waiting-other', { message: textIn(lang, params.message) });
+    case 'error-reported':
+      return t(lang, 'reason.error-reported', { task: params.task, message: textIn(lang, params.message) });
+    case 'confirm-effects': {
+      const ids = params.tasks || [];
+      const and = lang === 'en' ? ' and ' : ' i ';
+      const tasks = ids.length > 1 ? `${ids.slice(0, -1).join(', ')}${and}${ids[ids.length - 1]}` : String(ids[0] ?? '');
+      return t(lang, 'reason.confirm-effects', {
+        taskHas: t(lang, ids.length > 1 ? 'reason.task-has.many' : 'reason.task-has.one', { tasks }),
+        where: textIn(lang, params.where),
+      });
+    }
     default:
       return t(lang, `reason.${key}`, params);
   }
@@ -543,6 +611,8 @@ export function describeFact(lang, fact, nowMs = Date.now()) {
       });
     case 'proof-state':
       return t(lang, 'fact.proof-state', { task: p.task, stateText: stateText(lang, p.state), file: p.file });
+    case 'effect-where':
+      return t(lang, 'fact.effect-where', { task: p.task, where: textIn(lang, p.where) });
     default:
       return t(lang, `fact.${fact.key}`, p);
   }

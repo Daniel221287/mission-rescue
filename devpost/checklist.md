@@ -31,7 +31,7 @@ Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he 
   Learner check: On your phone or computer, open the public demo, open "Raport tygodniowy", read and copy the plan, run the sample agent, press "Sprawdź ponownie", then try "Test uczciwości".
   Commit: `Add safe rescue plans and a verified red-to-green finish`
 
-- [ ] **3. Every kind of stop explained, outside effects and limits labelled**
+- [x] **3. Every kind of stop explained, outside effects and limits labelled**
   Becomes usable: Extra samples show "Czeka na limit" (with the reset time), "Czeka na Ciebie" (with the question), "Brak postępu", "Stan nieustalony" (low confidence), an outside effect waiting for a human confirmation, and a broken mission file; the limits panel shows DEMO, RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE and NIEAKTUALNE; a picked folder works in Chrome/Edge.
   Why now: The detector's honest distinctions and the labelled data are part of the kernel; they come before the look.
   PRD ref: `prd.md > Stall Detector`, `prd.md > Proof Engine` (level 4), `prd.md > Limit Guardian`, `prd.md > Mission Tracker`

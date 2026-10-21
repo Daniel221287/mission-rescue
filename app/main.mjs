@@ -5,10 +5,12 @@ import { buildSampleWorkspace } from './demo/samples.mjs';
 import { runSampleAgent, tamperSample } from './demo/sample-agent.mjs';
 import { analyzeWorkspace } from './engine/analyze.mjs';
 import { subSource } from './engine/paths.mjs';
-import { createHttpWorkspaceSource, localProgramAvailable } from './sources-browser.mjs';
+import {
+  createHttpWorkspaceSource, localProgramAvailable, folderPickerSupport, createHandleSource, createFileListSource,
+} from './sources-browser.mjs';
 import {
   t, describeReason, describeFact, describeProblem, stateText, describeCheck, describeCheckFailure,
-  fmtTime, fmtRelative, limitLabelText, eventName,
+  fmtTime, fmtRelative, limitLabelText, eventName, textIn,
 } from './i18n.mjs';
 
 const app = document.getElementById('app');
@@ -33,8 +35,13 @@ function save(key, value) {
 const state = {
   lang: load('mr.lang', (navigator.language || 'pl').toLowerCase().startsWith('pl') ? 'pl' : 'en'),
   sourceKind: 'samples',
-  sources: { samples: null, local: null },
+  sources: { samples: null, local: null, folder: null },
   localAvailable: false,
+  folderSupport: 'none',
+  manualLimits: load('mr.manualLimits', []),
+  confirmations: load('mr.confirmations', []),
+  limitFormOpen: false,
+  limitFormError: null,
   result: null,
   busy: false,
   error: null,
@@ -63,7 +70,11 @@ async function refresh() {
   try {
     const source = currentSource();
     if (source && source.refresh) await source.refresh();
-    state.result = await analyzeWorkspace(source, { now: Date.now() });
+    state.result = await analyzeWorkspace(source, {
+      now: Date.now(),
+      manualLimits: state.manualLimits,
+      confirmations: state.confirmations,
+    });
     state.error = null;
   } catch (error) {
     state.error = error && error.message ? error.message : String(error);
@@ -88,8 +99,16 @@ function renderHeader() {
   const sources = [
     ['samples', L('src.samples'), true],
     ['local', L('src.local'), state.localAvailable],
+    ['folder', L('src.folder'), state.folderSupport !== 'none'],
   ];
-  const note = state.sourceKind === 'local' ? L('src.local.note') : L('src.samples.note');
+  const folder = state.sources.folder;
+  let note = state.sourceKind === 'local' ? L('src.local.note') : L('src.samples.note');
+  let extra = !state.localAvailable ? ` <span class="muted">${esc(L('src.local.unavailable'))}</span>` : '';
+  if (state.sourceKind === 'folder') {
+    note = folder ? L('src.folder.picked', { name: folder.label }) : L('src.folder.none');
+    extra = `${folder && folder.snapshot ? ` <span class="muted">${esc(L('src.folder.snapshot'))}</span>` : ''} <button class="btn btn--ghost btn--small" data-action="pick-folder">${esc(folder ? L('btn.pick-again') : L('btn.pick-folder'))}</button>`;
+  }
+  if (state.folderSupport === 'none' && state.sourceKind !== 'folder') extra += ` <span class="muted small">${esc(L('src.folder.unsupported'))}</span>`;
   return `
   <header class="top">
     <div class="top__brand">
@@ -104,7 +123,7 @@ function renderHeader() {
     <div class="seg" role="radiogroup" aria-label="${esc(L('src.label'))}">
       ${sources.map(([kind, label, enabled]) => `<button class="seg__btn" role="radio" aria-checked="${state.sourceKind === kind}" data-action="source" data-kind="${kind}" ${enabled ? '' : 'disabled'}>${esc(label)}</button>`).join('')}
     </div>
-    <p class="sources__note">${esc(note)}${!state.localAvailable ? ` <span class="muted">${esc(L('src.local.unavailable'))}</span>` : ''}</p>
+    <p class="sources__note">${esc(note)}${extra}</p>
     ${state.result ? `<p class="sources__checked muted">${esc(L('mission.checked', { at: fmtTime(state.result.checkedAt, state.lang, now) }))}</p>` : ''}
   </section>`;
 }
@@ -189,16 +208,30 @@ function renderTask(task) {
         <dt>${esc(L('detail.actual-sha'))}</dt><dd><code class="sha">${esc(a.actualSha || L('detail.none'))}</code></dd>
         ${task.startedAt ? `<dt>${esc(eventName(state.lang, 'started'))}</dt><dd>${esc(fmtTime(task.startedAt, state.lang, now))}</dd>` : ''}
         ${task.doneAt ? `<dt>${esc(eventName(state.lang, 'done'))}</dt><dd>${esc(fmtTime(task.doneAt, state.lang, now))}</dd>` : ''}
-        ${task.errorMessage ? `<dt>${esc(eventName(state.lang, 'error'))}</dt><dd>${esc(task.errorMessage)}</dd>` : ''}
+        ${task.errorMessage ? `<dt>${esc(eventName(state.lang, 'error'))}</dt><dd>${esc(textIn(state.lang, task.errorMessage))}</dd>` : ''}
+        ${task.effect ? `<dt>${esc(L('detail.where'))}</dt><dd>${esc(textIn(state.lang, task.effect.where))}</dd>` : ''}
+        ${task.effect && task.effect.confirmation ? `<dt>${esc(L('level.effect'))}</dt><dd>${esc(L('detail.confirmed-by-human', { at: fmtTime(task.effect.confirmation.at, state.lang, now) }))} <button class="btn btn--ghost btn--small" data-action="unconfirm-effect" data-task="${task.id}">${esc(L('btn.unconfirm-effect'))}</button></dd>` : ''}
       </dl>
+      ${task.state === 'effect-unconfirmed' ? confirmBox(task) : ''}
     </details>
   </li>`;
+}
+
+// A person confirms an outside effect for exactly this version of the result file.
+function confirmBox(task) {
+  if (!task || !task.effect || !task.artifact.actualSha) return '';
+  return `
+      <div class="confirm">
+        <p>${esc(L('confirm.where', { where: textIn(state.lang, task.effect.where) }))}</p>
+        <button class="btn btn--primary" data-action="confirm-effect" data-task="${task.id}">${esc(L('btn.confirm-effect'))}</button>
+        <p class="muted small">${esc(L('confirm.note', { sha: task.artifact.actualSha.slice(0, 12) }))}</p>
+      </div>`;
 }
 
 function renderLog(report) {
   const now = Date.now();
   if (!report.recentEvents.length) return `<p class="muted">${esc(L('log.empty'))}</p>`;
-  return `<ol class="log">${report.recentEvents.map((e) => `<li><span class="log__time">${esc(fmtTime(e.at, state.lang, now))}</span> <span class="log__event">${esc(eventName(state.lang, e.event))}</span>${e.task != null ? ` <span class="log__task">#${e.task}</span>` : ''}${e.message ? ` <span class="log__msg">${esc(e.message)}</span>` : ''}${e.question ? ` <span class="log__msg">${esc(e.question)}</span>` : ''}${e.artifact && e.artifact.file ? ` <code>${esc(e.artifact.file)}</code>` : ''}</li>`).join('')}</ol>`;
+  return `<ol class="log">${report.recentEvents.map((e) => `<li><span class="log__time">${esc(fmtTime(e.at, state.lang, now))}</span> <span class="log__event">${esc(eventName(state.lang, e.event))}</span>${e.task != null ? ` <span class="log__task">#${e.task}</span>` : ''}${e.message ? ` <span class="log__msg">${esc(textIn(state.lang, e.message))}</span>` : ''}${e.question ? ` <span class="log__msg">${esc(textIn(state.lang, e.question))}</span>` : ''}${e.artifact && e.artifact.file ? ` <code>${esc(e.artifact.file)}</code>` : ''}</li>`).join('')}</ol>`;
 }
 
 const ACTION_COLOR = { 'check-first': 'amber', redo: 'red', do: 'grey', confirm: 'teal' };
@@ -210,6 +243,8 @@ function renderRescue(report) {
     return `<section class="panel rescue"><h2 class="section-title">${esc(L('section.rescue'))}</h2><p class="muted">${esc(L('rescue.not-needed'))}</p></section>`;
   }
   const copyLabel = state.copyState === 'ok' ? L('btn.copied') : state.copyState === 'failed' ? L('btn.copy-failed') : L('btn.copy');
+  const confirmOnly = plan.steps.every((s) => s.action === 'confirm');
+  const taskById = (id) => report.tasks.find((t) => t.id === id);
   return `
   <section class="panel rescue" aria-label="${esc(L('section.rescue'))}">
     <h2 class="section-title">${esc(L('section.rescue'))}</h2>
@@ -224,14 +259,16 @@ function renderRescue(report) {
         ${chip(ACTION_COLOR[s.action] || 'grey', L(`rescue.action.${s.action}`))}
         <span class="step__title">${s.task}. ${esc(title2(s.title))}</span>
         <span class="step__check muted small">${esc(L('rescue.check', { file: s.file, condition: describeCheck(state.lang, s.check) }))}</span>
+        ${s.action === 'confirm' ? confirmBox(taskById(s.task)) : ''}
       </li>`).join('')}
     </ol>
+    ${confirmOnly ? `<p class="muted">${esc(L('rescue.confirm-only'))}</p>` : `
     <h3 class="sub-title">${esc(L('rescue.instruction'))}</h3>
     <pre class="instruction" id="rescue-text" tabindex="0">${esc(plan.instruction[state.lang])}</pre>
     <div class="actions">
       <button class="btn" data-action="copy">${esc(copyLabel)}</button>
       <span class="muted small">${esc(L('rescue.handover'))}</span>
-    </div>
+    </div>`}
   </section>`;
 }
 
@@ -319,14 +356,40 @@ function renderLimits() {
     <li class="limit limit--${esc(e.label)}">
       <div class="limit__head"><strong>${esc(e.plan)}</strong> <span class="muted">${esc(e.window)}</span> ${chip(e.label === 'stale' ? 'grey' : e.label === 'auto-verified' ? 'green' : e.label === 'demo' ? 'teal' : 'amber', limitLabelText(state.lang, e, now), 'limit__label')}</div>
       <div class="bar bar--${e.usedPercent >= 95 ? 'red' : e.usedPercent >= 75 ? 'amber' : 'green'}"><span data-w="${Math.min(100, e.usedPercent)}"></span></div>
-      <div class="limit__meta"><span>${esc(String(e.usedPercent))}%</span>${e.resetsAt ? ` · <span>${esc(L('limit.resets', { at: `${fmtTime(e.resetsAt, state.lang, now)} (${fmtRelative(e.resetsAt, state.lang, now)})` }))}</span>` : ''}</div>
+      <div class="limit__meta"><span>${esc(String(e.usedPercent))}%</span>${e.resetsAt ? ` · <span>${esc(L('limit.resets', { at: `${fmtTime(e.resetsAt, state.lang, now)} (${fmtRelative(e.resetsAt, state.lang, now)})` }))}</span>` : ''}${e.capturedAt && e.source !== 'manual' && e.staleReason !== 'old-capture' ? ` · <span class="muted">${esc(L('limit.captured', { at: fmtRelative(e.capturedAt, state.lang, now) }))}</span>` : ''}${e.source === 'manual' ? ` <button class="btn btn--ghost btn--small" data-action="remove-limit" data-index="${e.manualIndex}" aria-label="${esc(L('limit.manual.remove', { plan: e.plan, window: e.window }))}">${esc(L('btn.remove'))}</button>` : ''}</div>
     </li>`).join('');
   return `
   <section class="panel limits" aria-label="${esc(L('section.limits'))}">
     <h2 class="section-title">${esc(L('section.limits'))}</h2>
     ${rows ? `<ul class="limits__list">${rows}</ul>` : `<p class="muted">${esc(L('limit.empty'))}</p>`}
+    ${state.limitFormOpen ? limitForm() : `<div class="actions"><button class="btn" data-action="limit-form">${esc(L('btn.add-limit'))}</button></div>`}
     <p class="muted small">${esc(L('limit.note'))}</p>
   </section>`;
+}
+
+const KNOWN_PLANS = ['Claude Pro', 'Claude Max', 'ChatGPT Plus', 'ChatGPT Pro', 'Google AI Pro'];
+const WINDOWS = ['5h', '24h', '7d', '30d'];
+
+function limitForm() {
+  const plans = new Set(KNOWN_PLANS);
+  for (const m of (state.result && state.result.missions) || []) if (m.plan) plans.add(m.plan);
+  return `
+    <form class="limit-form" data-form="limit" novalidate>
+      <h3 class="sub-title">${esc(L('limit.form.title'))}</h3>
+      <p class="muted small">${esc(L('limit.form.hint'))}</p>
+      <div class="limit-form__grid">
+        <label>${esc(L('limit.form.plan'))}<input name="plan" list="plan-names" maxlength="40" autocomplete="off" required></label>
+        <label>${esc(L('limit.form.window'))}<select name="window">${WINDOWS.map((w) => `<option value="${w}">${w}</option>`).join('')}</select></label>
+        <label>${esc(L('limit.form.used'))}<input name="used" type="number" min="0" max="100" step="1" inputmode="numeric" required></label>
+        <label>${esc(L('limit.form.reset'))}<input name="reset" type="datetime-local"></label>
+      </div>
+      <datalist id="plan-names">${[...plans].map((p) => `<option value="${esc(p)}"></option>`).join('')}</datalist>
+      ${state.limitFormError ? `<p class="form-error" role="alert">${esc(state.limitFormError)}</p>` : ''}
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">${esc(L('btn.save'))}</button>
+        <button class="btn btn--ghost" type="button" data-action="limit-form-cancel">${esc(L('btn.cancel'))}</button>
+      </div>
+    </form>`;
 }
 
 function render() {
@@ -354,8 +417,14 @@ app.addEventListener('click', async (event) => {
     state.lang = state.lang === 'pl' ? 'en' : 'pl';
     save('mr.lang', state.lang);
     render();
+  } else if (action === 'pick-folder') {
+    pickFolder();
   } else if (action === 'source') {
     const kind = target.dataset.kind;
+    if (kind === 'folder' && !state.sources.folder) {
+      pickFolder(); // must start inside the click: browsers only open pickers for a user action
+      return;
+    }
     if (kind === state.sourceKind) return;
     state.sourceKind = kind;
     if (kind === 'local' && !state.sources.local) state.sources.local = createHttpWorkspaceSource();
@@ -409,6 +478,31 @@ app.addEventListener('click', async (event) => {
     await tamperSample(subSource(state.sources.samples, dir));
     state.notice = L('demo.honesty.done');
     render();
+  } else if (action === 'confirm-effect' || action === 'unconfirm-effect') {
+    const report = currentReport();
+    const task = report && report.tasks.find((x) => x.id === Number(target.dataset.task));
+    if (!report || !task) return;
+    const others = state.confirmations.filter((c) => !(c.mission === report.key && c.task === task.id));
+    state.confirmations = action === 'confirm-effect' && task.artifact.actualSha
+      ? [...others, { mission: report.key, task: task.id, sha256: task.artifact.actualSha, at: new Date().toISOString() }].slice(-200)
+      : others;
+    save('mr.confirmations', state.confirmations);
+    await refresh();
+  } else if (action === 'limit-form') {
+    state.limitFormOpen = true;
+    state.limitFormError = null;
+    render();
+    const first = app.querySelector('.limit-form input[name="plan"]');
+    if (first) first.focus();
+  } else if (action === 'limit-form-cancel') {
+    state.limitFormOpen = false;
+    state.limitFormError = null;
+    render();
+  } else if (action === 'remove-limit') {
+    const index = Number(target.dataset.index);
+    state.manualLimits = state.manualLimits.filter((_, i) => i !== index);
+    save('mr.manualLimits', state.manualLimits);
+    await refresh();
   } else if (action === 'reset-samples') {
     state.sources.samples = await buildSampleWorkspace({ now: Date.now() });
     state.agentSteps = [];
@@ -418,12 +512,83 @@ app.addEventListener('click', async (event) => {
   }
 });
 
+app.addEventListener('submit', async (event) => {
+  const form = event.target;
+  if (!form || form.dataset.form !== 'limit') return;
+  event.preventDefault();
+  const data = new FormData(form);
+  const plan = String(data.get('plan') || '').trim();
+  const used = Number(data.get('used'));
+  const resetText = String(data.get('reset') || '');
+  const resetMs = resetText ? new Date(resetText).getTime() : NaN;
+  if (!plan || data.get('used') === '' || !Number.isFinite(used) || used < 0 || used > 100) {
+    state.limitFormError = L('limit.form.error');
+    render();
+    return;
+  }
+  state.manualLimits = [...state.manualLimits, {
+    plan,
+    window: String(data.get('window') || '5h'),
+    usedPercent: used,
+    resetsAt: Number.isFinite(resetMs) ? new Date(resetMs).toISOString() : null,
+    enteredAt: new Date().toISOString(),
+  }].slice(-50);
+  save('mr.manualLimits', state.manualLimits);
+  state.limitFormOpen = false;
+  state.limitFormError = null;
+  await refresh();
+});
+
+function currentReport() {
+  const dir = route().mission;
+  return (state.result && state.result.missions.find((m) => m.dir === dir)) || null;
+}
+
+// Picking a folder: the File System Access API where it exists (re-read on every check),
+// otherwise the folder input (a snapshot). Read-only either way; nothing leaves the browser.
+async function useFolder(source) {
+  state.sources.folder = source;
+  state.sourceKind = 'folder';
+  state.notice = null;
+  if (location.hash !== '#/') location.hash = '#/';
+  await refresh();
+}
+
+function openFolderInput() {
+  const input = document.getElementById('folder-input');
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+async function pickFolder() {
+  if (state.folderSupport === 'handle') {
+    try {
+      const handle = await window.showDirectoryPicker({ id: 'mission-rescue', mode: 'read' });
+      await useFolder(createHandleSource(handle));
+    } catch (error) {
+      if (error && error.name === 'AbortError') return;
+      openFolderInput();
+    }
+  } else if (state.folderSupport === 'input') {
+    openFolderInput();
+  }
+}
+
+const folderInput = document.getElementById('folder-input');
+if (folderInput) {
+  folderInput.addEventListener('change', () => {
+    if (folderInput.files && folderInput.files.length) useFolder(createFileListSource(folderInput.files));
+  });
+}
+
 window.addEventListener('hashchange', () => {
   render();
   window.scrollTo({ top: 0 });
 });
 
 async function boot() {
+  state.folderSupport = folderPickerSupport();
   state.sources.samples = await buildSampleWorkspace({ now: Date.now() });
   state.localAvailable = await localProgramAvailable();
   if (state.localAvailable) {

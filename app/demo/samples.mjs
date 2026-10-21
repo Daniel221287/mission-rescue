@@ -5,6 +5,7 @@
 import { createMemorySource } from '../engine/memory-source.mjs';
 import { sha256Hex } from '../engine/hash.mjs';
 import { INPUT_CSV, INPUT_FILE, weeklyMission, weeklyTask, partialSummary } from './weekly-report.mjs';
+import { buildExtraSamples } from './extra-samples.mjs';
 
 const MIN = 60000;
 
@@ -72,6 +73,7 @@ export function demoLimitsFile({ now = Date.now() } = {}) {
 export async function buildSampleMissions({ now = Date.now() } = {}) {
   return {
     'weekly-report': await buildWeeklyReportFiles({ now }),
+    ...(await buildExtraSamples({ now })),
   };
 }
 

@@ -5,6 +5,17 @@ export const LOG_FILE = 'worklog.jsonl';
 export const EVENTS = ['started', 'progress', 'done', 'waiting', 'error', 'heartbeat', 'note'];
 const WAIT_REASONS = new Set(['limit', 'human', 'other']);
 
+// Free text from the agent: a string, or the same text in Polish and English ({"pl": …, "en": …}).
+export function readText(value) {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const out = {};
+    for (const lang of ['pl', 'en']) if (typeof value[lang] === 'string' && value[lang].trim()) out[lang] = value[lang];
+    return Object.keys(out).length ? out : null;
+  }
+  return null;
+}
+
 function problem(code, line, params = {}) {
   return { file: LOG_FILE, line, code, ...params };
 }
@@ -52,9 +63,11 @@ export function parseWorklog(text, { taskIds } = {}) {
         event.until = new Date(untilMs).toISOString();
         event.untilMs = untilMs;
       }
-      if (typeof entry.question === 'string') event.question = entry.question;
+      const question = readText(entry.question);
+      if (question) event.question = question;
     }
-    if (typeof entry.message === 'string') event.message = entry.message;
+    const message = readText(entry.message);
+    if (message) event.message = message;
     events.push(event);
   });
   events.sort((a, b) => a.atMs - b.atMs || a.line - b.line);

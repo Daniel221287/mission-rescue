@@ -67,12 +67,12 @@ Carried from `prd.md > Look and Feel`.
 
 ### Mission Reader
 
-Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent`, optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`). Reports problems with the file name.
+Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent`, optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`, where `where` reads naturally after "w" / "in", e.g. "folderze „Wysłane” w poczcie" / "the mail \"Sent\" folder"). Reports problems with the file name, and for broken JSON the line where the text stops being valid (found by the engine itself, the same in every browser and in Node.js).
 File: `app/engine/mission.mjs`. PRD ref: `prd.md > Mission Tracker`.
 
 ### Work Log Reader
 
-Reads `worklog.jsonl`: one JSON object per line with `at` (ISO time), `event` (`started`, `progress`, `done`, `waiting`, `error`, `heartbeat`, `note`), optional `task`; `done` carries `artifact: {file, sha256}`; `waiting` carries `reason` (`limit`, `human`, `other`), optional `until` and `question`; `error` carries `message`. Broken lines are reported with their line numbers and skipped.
+Reads `worklog.jsonl`: one JSON object per line with `at` (ISO time), `event` (`started`, `progress`, `done`, `waiting`, `error`, `heartbeat`, `note`), optional `task`; `done` carries `artifact: {file, sha256}`; `waiting` carries `reason` (`limit`, `human`, `other`), optional `until` and `question`; `error` carries `message`; any event may carry a `message`. `question` and `message` are plain text or the same text in both languages (`{"pl": …, "en": …}`), shown in the screen's language. Broken lines are reported with their line numbers and skipped.
 File: `app/engine/worklog.mjs`. PRD ref: `prd.md > Mission Tracker`, `prd.md > States and Boundaries`.
 
 ### Proof Engine
@@ -82,9 +82,10 @@ File: `app/engine/proof.mjs` (fingerprints: `app/engine/hash.mjs`). PRD ref: `pr
 
 ### Stall Detector
 
-Inputs: task results, events, now, the mission's stall time, the current task's expected time, limits. Waiting time T = max(stallMinutes, 1.5 × expectedMinutes of the current task). Progress time = the latest proven task's `done` (or the first event). Activity time = the latest event of any kind. First matching rule wins:
+Inputs: task results, events, now, the mission's stall time, the current task's expected time, limits. The current task is the first task that is neither proven nor only waiting for a person's confirmation. Waiting time T = max(stallMinutes, 1.5 × expectedMinutes of the current task). Progress time = the latest verified result's `done` (a proven task, or a verified file whose outside effect is not confirmed yet), or the first event. Activity time = the latest event of any kind. First matching rule wins:
 1. all tasks green → `complete`;
 2. a declared task fails its proof → `proof-problem` (high);
+2a. every unfinished task only waits for a person to confirm its outside effect → `needs-confirmation` (high; added during the build so a finished agent is not shown as "working" or "stalled" while the person has to look at the outside world);
 3. no events → `not-started`;
 4. latest meaningful event is `error` → `likely-failure` (high);
 5. latest meaningful event is `waiting` for a person → `waiting-human` (high);
@@ -92,7 +93,7 @@ Inputs: task results, events, now, the mission's stall time, the current task's 
 7. no progress for longer than T and activity within T (heartbeats only) → `no-progress` (high if longer than 2T, else medium);
 8. silence longer than T: the plan's limit is used up (≥ 95 %) with a future reset → `waiting-limit` (medium, inferred); silence longer than 3T → `likely-failure` (high if the current task left an incomplete result file, else medium); otherwise → `undetermined` (low);
 9. otherwise → `working` (medium).
-Each verdict carries facts (last proven task and time, last signal and time, silence length, waiting time T, limit state, incomplete file) for the screen.
+Each verdict carries facts (last proven task and time, last signal and time, silence length, waiting time T, limit state, incomplete file, where to check an outside effect) for the screen. Limits used here are never out of date; when several numbers describe the same plan and window, the most trusted one wins (verified automatically, then manual, then demo). The mission list puts what needs attention first (proof problem, likely failure, unreadable, no progress, needs confirmation, waiting for a person, waiting for a limit, undetermined, working, not started, complete).
 File: `app/engine/stall.mjs`. PRD ref: `prd.md > Stall Detector`.
 
 ### Rescue Planner
@@ -102,7 +103,7 @@ File: `app/engine/rescue.mjs`. PRD ref: `prd.md > Mission Rescue`.
 
 ### Limit Guardian
 
-Reads `limits/*.json` in the source (each: `source` = `demo` or `auto`, `capturedAt`, `plans[]` with `plan`, `window`, `usedPercent`, `resetsAt`), and manual entries from the page. Labels: DEMO, RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE (auto, captured ≤ 30 minutes ago), NIEAKTUALNE (auto older than 30 minutes, or any entry whose reset time has passed). The status-line script `tools/claude-statusline.mjs` reads Claude Code's status-line JSON on its input and writes `limits/limits.auto.json` from `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at` in Unix seconds); without those fields it writes nothing.
+Reads `limits/*.json` in the source (each: `source` = `demo` or `auto`, `capturedAt`, `plans[]` with `plan`, `window`, `usedPercent`, `resetsAt`), and manual entries from the page. Labels: DEMO, RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE (auto, captured ≤ 30 minutes ago), NIEAKTUALNE (auto older than 30 minutes, or any entry whose reset time has passed). Options of the script: `--plan` (the name used in `mission.json`, default "Claude"), `--workspace`, `--silent`, `--lang`; it never fails the status line (bad input prints a plain line and writes nothing). The status-line script `tools/claude-statusline.mjs` reads Claude Code's status-line JSON on its input and writes `limits/limits.auto.json` from `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage`, `resets_at` in Unix seconds); without those fields it writes nothing.
 Files: `app/engine/limits.mjs`, `tools/claude-statusline.mjs`. PRD ref: `prd.md > Limit Guardian`.
 
 ### Mission Analyzer
@@ -117,7 +118,7 @@ PRD ref: `prd.md > Mission Tracker`.
 
 ### Sample Builder and Sample Agent
 
-`app/demo/weekly-report.mjs`: fictional orders of a fictional shop and the 7 tasks' real computations (load, validate, daily totals, summary, chart data, self-test, final report with all fingerprints). `app/demo/samples.mjs`: builds the sample workspace (the jury mission stopped after task 3 with an incomplete task-4 file; waiting for a limit; waiting for you; no progress; undetermined; outside effect; a broken mission file; demo limits) with times relative to now. `app/demo/sample-agent.mjs`: follows the rescue plan through the engine and writes results and log lines. Used by the page, by `demo-reset` and `demo-agent`, and by the tests.
+`app/demo/weekly-report.mjs`: fictional orders of a fictional shop and the 7 tasks' real computations (load, validate, daily totals, summary, chart data, self-test, final report with all fingerprints). `app/demo/samples.mjs` with `app/demo/extra-samples.mjs`: builds the sample workspace (the jury mission stopped after task 3 with an incomplete task-4 file; normal work; waiting for a limit; waiting for you; no progress; undetermined; an outside effect waiting for a person's confirmation; a broken mission file; demo limits) with times relative to now; every reported result is a real file with its real SHA-256. `app/demo/sample-agent.mjs`: follows the rescue plan through the engine and writes results and log lines. Used by the page, by `demo-reset` and `demo-agent`, and by the tests.
 PRD ref: `prd.md > Demo and Self-Check`.
 
 ### Command Center Screen

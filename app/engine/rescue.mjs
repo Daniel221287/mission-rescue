@@ -76,6 +76,19 @@ function instructionText(report, plan, lang) {
     ? `Status: ${report.counts.proven} of ${report.counts.total} tasks proven. Last confirmed checkpoint: ${plan.checkpoint ? `task ${plan.checkpoint}` : 'none'}.`
     : `Stan: ${report.counts.proven} z ${report.counts.total} zadań z dowodem. Ostatni potwierdzony punkt: ${plan.checkpoint ? `zadanie ${plan.checkpoint}` : 'brak'}.`);
   lines.push('');
+  if (plan.steps.every((s) => s.action === 'confirm')) {
+    lines.push(en
+      ? 'Nothing for the agent: its results are verified. A person still has to confirm the outside effect:'
+      : 'Nic dla agenta: jego wyniki są sprawdzone. Człowiek musi jeszcze potwierdzić efekt zewnętrzny:');
+    for (const s of plan.steps) {
+      lines.push(en
+        ? `   - Task ${s.task} "${title(s, lang)}": check in ${s.effect.where.en} that it really happened, then confirm it in Mission Rescue.`
+        : `   - Zadanie ${s.task} „${title(s, lang)}”: sprawdź w ${s.effect.where.pl}, czy to naprawdę nastąpiło, i potwierdź w Mission Rescue.`);
+    }
+    lines.push('');
+    lines.push(en ? 'A task is green only with verified proof.' : 'Zadanie będzie zielone tylko ze sprawdzonym dowodem.');
+    return lines.join('\n');
+  }
   let n = 1;
   if (plan.proven.length) {
     lines.push(en

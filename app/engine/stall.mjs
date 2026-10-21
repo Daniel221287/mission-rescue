@@ -14,6 +14,7 @@ export const VERDICT_COLOR = {
   'no-progress': 'red',
   'waiting-limit': 'amber',
   'waiting-human': 'teal',
+  'needs-confirmation': 'teal',
   working: 'amber',
   undetermined: 'grey',
   'not-started': 'grey',
@@ -51,13 +52,30 @@ export function diagnose({ mission, tasks, events, now, limits = [] }) {
     ], { currentTask: broken.id });
   }
 
+  // A verified result whose outside effect (an e-mail sent, a payment made) only a person
+  // can confirm. The agent's part is done; a file can never prove the outside world.
+  const unconfirmed = tasks.filter((t) => t.state === 'effect-unconfirmed');
+  const pending = tasks.filter((t) => t.state !== 'proven' && t.state !== 'effect-unconfirmed');
+  if (!pending.length && unconfirmed.length) {
+    return verdict('needs-confirmation', 'high', {
+      key: 'confirm-effects',
+      params: { tasks: unconfirmed.map((t) => t.id), where: unconfirmed[0].effect ? unconfirmed[0].effect.where : null },
+    }, [
+      { key: 'proven-count', params: { proven: proven.length, total } },
+      ...unconfirmed.map((t) => ({ key: 'effect-where', params: { task: t.id, where: t.effect ? t.effect.where : null } })),
+    ], { currentTask: unconfirmed[0].id });
+  }
+
   if (!events.length) {
     return verdict('not-started', 'high', { key: 'no-events', params: {} }, []);
   }
 
-  const current = tasks.find((t) => t.state !== 'proven') || null;
+  const current = pending[0] || null;
   const T = waitingTimeMs(mission, current);
-  const lastProven = proven.filter((t) => t.doneAtMs != null).sort((a, b) => b.doneAtMs - a.doneAtMs)[0] || null;
+  // Progress = a new verified result (an unconfirmed outside effect still has a verified file).
+  const lastProven = tasks
+    .filter((t) => (t.state === 'proven' || t.state === 'effect-unconfirmed') && t.doneAtMs != null)
+    .sort((a, b) => b.doneAtMs - a.doneAtMs)[0] || null;
   const progressAt = lastProven ? lastProven.doneAtMs : events[0].atMs;
   // The clock for "no progress" starts at the later of the last proven result and the
   // start of the task being worked on now, so a task that has just started is not blamed.

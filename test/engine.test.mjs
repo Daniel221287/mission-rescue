@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { safeRelPath, isSafeRelPath } from '../app/engine/paths.mjs';
 import { parseMission } from '../app/engine/mission.mjs';
 import { parseWorklog } from '../app/engine/worklog.mjs';
-import { analyzeMission, analyzeWorkspace } from '../app/engine/analyze.mjs';
+import { analyzeMission, analyzeWorkspace, ATTENTION_ORDER } from '../app/engine/analyze.mjs';
 import { sha256Hex } from '../app/engine/hash.mjs';
 import { createMemorySource } from '../app/engine/memory-source.mjs';
 import { buildSampleWorkspace } from '../app/demo/samples.mjs';
@@ -118,7 +118,11 @@ test('workspace: lists missions, keeps a broken mission as a readable card', asy
   await ws.write('broken/worklog.jsonl', '');
   const result = await analyzeWorkspace(ws, { now: NOW });
   const dirs = result.missions.map((m) => m.dir);
-  assert.deepEqual(dirs, ['broken', 'weekly-report']);
+  // What needs attention first: the jury mission (likely failure), then unreadable missions.
+  assert.deepEqual(dirs.slice(0, 3), ['weekly-report', 'broken', 'broken-mission']);
+  const order = ATTENTION_ORDER;
+  const ranks = result.missions.map((m) => order.indexOf(m.verdict.code));
+  assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b));
   const broken = result.missions.find((m) => m.dir === 'broken');
   assert.equal(broken.ok, false);
   assert.equal(broken.verdict.code, 'unreadable');

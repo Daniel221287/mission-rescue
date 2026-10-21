@@ -45,7 +45,7 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
         code: 'unreadable',
         color: VERDICT_COLOR.unreadable,
         confidence: 'high',
-        reason: { key: 'unreadable', params: { file: MISSION_FILE } },
+        reason: { key: 'unreadable', params: { file: MISSION_FILE, problem: missionProblems[0] || null } },
         facts: [],
       },
       recentEvents: [],
@@ -56,7 +56,8 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
   const { events, problems: logProblems, missing: logMissing } = await readWorklog(source, {
     taskIds: mission.tasks.map((t) => t.id),
   });
-  const missionKey = dir;
+  // Human confirmations are stored per mission (its id, or its folder) and per exact file fingerprint.
+  const missionKey = mission.id || dir;
   const tasks = [];
   for (const task of mission.tasks) tasks.push(await judgeTask(task, events, source, { confirmations, missionKey }));
   const verdict = diagnose({ mission, tasks, events, now: nowMs, limits });
@@ -64,6 +65,7 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
   const report = {
     dir,
     ok: true,
+    key: missionKey,
     id: mission.id,
     title: mission.title,
     agent: mission.agent,
@@ -84,6 +86,17 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
   return report;
 }
 
+// The command center lists what needs attention first; finished missions go to the bottom.
+export const ATTENTION_ORDER = [
+  'proof-problem', 'likely-failure', 'unreadable', 'no-progress', 'needs-confirmation', 'waiting-human',
+  'waiting-limit', 'undetermined', 'working', 'not-started', 'complete',
+];
+
+function attention(report) {
+  const index = ATTENTION_ORDER.indexOf(report.verdict.code);
+  return index === -1 ? ATTENTION_ORDER.length : index;
+}
+
 export async function analyzeWorkspace(workspace, { now = Date.now(), manualLimits = [], confirmations = [] } = {}) {
   const nowMs = typeof now === 'number' ? now : Date.parse(now);
   const limits = await readLimits(workspace, { now: nowMs, manual: manualLimits });
@@ -93,5 +106,6 @@ export async function analyzeWorkspace(workspace, { now = Date.now(), manualLimi
     const source = subSource(workspace, dir);
     missions.push(await analyzeMission(source, { now: nowMs, limits: limits.entries, confirmations, dir }));
   }
+  missions.sort((a, b) => attention(a) - attention(b) || a.dir.localeCompare(b.dir));
   return { missions, limits, checkedAt: new Date(nowMs).toISOString() };
 }

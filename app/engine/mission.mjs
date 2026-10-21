@@ -38,12 +38,101 @@ function validateCheck(check) {
   return { type: 'nonEmpty' };
 }
 
+// Where a JSON text stops being valid (character index), or null when it is valid.
+// Engines word their errors differently and some give no position, so the page and the
+// command line find the place the same way themselves.
+export function jsonErrorPosition(text) {
+  const s = String(text);
+  let i = 0;
+  const fail = () => {
+    throw i;
+  };
+  const ws = () => {
+    while (i < s.length && ' \t\n\r'.includes(s[i])) i += 1;
+  };
+  function string() {
+    i += 1;
+    while (i < s.length) {
+      const c = s[i];
+      if (c === '"') {
+        i += 1;
+        return;
+      }
+      if (c === '\\') i += 2;
+      else if (c < ' ') fail();
+      else i += 1;
+    }
+    fail();
+  }
+  function number() {
+    const m = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/.exec(s.slice(i));
+    if (!m) fail();
+    i += m[0].length;
+  }
+  function list(close, item) {
+    i += 1;
+    ws();
+    if (s[i] === close) {
+      i += 1;
+      return;
+    }
+    for (;;) {
+      item();
+      ws();
+      if (s[i] === ',') {
+        i += 1;
+        continue;
+      }
+      if (s[i] === close) {
+        i += 1;
+        return;
+      }
+      fail();
+    }
+  }
+  function value() {
+    ws();
+    const c = s[i];
+    if (c === '{') {
+      list('}', () => {
+        ws();
+        if (s[i] !== '"') fail();
+        string();
+        ws();
+        if (s[i] !== ':') fail();
+        i += 1;
+        value();
+      });
+    } else if (c === '[') list(']', value);
+    else if (c === '"') string();
+    else if (c === '-' || (c >= '0' && c <= '9')) number();
+    else if (s.startsWith('true', i)) i += 4;
+    else if (s.startsWith('false', i)) i += 5;
+    else if (s.startsWith('null', i)) i += 4;
+    else fail();
+  }
+  try {
+    value();
+    ws();
+    if (i < s.length) fail();
+    return null;
+  } catch (position) {
+    return typeof position === 'number' ? Math.min(position, s.length) : null;
+  }
+}
+
+export function jsonErrorLine(text) {
+  const position = jsonErrorPosition(text);
+  return position == null ? null : String(text).slice(0, position).split('\n').length;
+}
+
 export function parseMission(text) {
   let raw;
   try {
     raw = JSON.parse(text);
   } catch (error) {
-    return { mission: null, problems: [problem('invalid-json', { detail: error.message })] };
+    const line = jsonErrorLine(text);
+    return { mission: null, problems: [problem('invalid-json', line ? { detail: error.message, line } : { detail: error.message })] };
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return { mission: null, problems: [problem('not-an-object')] };

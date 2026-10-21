@@ -84,13 +84,17 @@ Progress means a new proven result. Heartbeats, notes and "I'm still working" me
 - **Czeka na Ciebie** (waiting for you, teal): the agent asked a question; the question is shown.
 - **Pracuje** (working normally, yellow): recent progress or recent activity within the expected time.
 - **Stan nieustalony** (undetermined, grey): silence longer than expected but too short to call; Mission Rescue says what to check.
+- **Czeka na Twoje potwierdzenie** (waiting for your confirmation, teal; added during the build): the agent's results are verified and only an outside effect is left for a person to confirm, so the agent is neither "working" nor "stalled".
 - **Zakończona** (complete, green) and **Problem z dowodem** (proof problem, red) come from the Proof Engine.
+
+The mission list shows what needs attention first; finished missions go to the bottom.
 
 - [ ] The jury sample shows "Prawdopodobna awaria" with the facts (last proven task 3, task 4 started, incomplete file, silence of about two hours, no stated reason) and a high confidence.
 - [ ] Silence slightly longer than expected shows "Stan nieustalony" with low confidence, not a failure.
 - [ ] Only heartbeats after the last proven task, for well past the expected time, shows "Brak postępu".
 - [ ] "Waiting for a limit" in the log shows "Czeka na limit" with the reset time; silence while the plan's limit is used up shows "Czeka na limit" with medium confidence; silence long after the reset shows "Prawdopodobna awaria".
 - [ ] A question in the log shows "Czeka na Ciebie" with the question.
+- [ ] A finished agent whose last task only needs a person's confirmation shows "Czeka na Twoje potwierdzenie" with where to check.
 
 ### Mission Rescue
 

@@ -73,21 +73,30 @@ export async function readLimits(workspace, { now = Date.now(), manual = [] } = 
       else problems.push({ file: path, code: 'bad-plan' });
     }
   }
-  for (const raw of Array.isArray(manual) ? manual : []) {
+  (Array.isArray(manual) ? manual : []).forEach((raw, manualIndex) => {
     const entry = normalizePlan(raw, 'manual', Date.parse(raw && raw.enteredAt), 'manual');
-    if (entry) entries.push(entry);
-  }
+    if (entry) entries.push({ ...entry, manualIndex });
+  });
   for (const entry of entries) Object.assign(entry, labelLimit(entry, nowMs));
   entries.sort((a, b) => a.plan.localeCompare(b.plan) || a.window.localeCompare(b.window));
   return { entries, problems };
 }
 
-// The most constraining current (not out-of-date) limit for a plan.
+// How much each kind of number is trusted when several describe the same plan and window.
+const TRUST = { 'auto-verified': 3, manual: 2, demo: 1 };
+
+// The most constraining current (not out-of-date) limit for a plan. For each window the
+// most trusted number wins (verified automatically, then manual, then demo).
 export function limitForPlan(plan, entries, nowMs) {
   if (!plan || !Array.isArray(entries)) return null;
   const candidates = entries.filter(
     (e) => e.plan === plan && e.label !== 'stale' && (e.resetsAtMs == null || e.resetsAtMs > nowMs),
   );
   if (!candidates.length) return null;
-  return candidates.sort((a, b) => b.usedPercent - a.usedPercent || (a.resetsAtMs ?? Infinity) - (b.resetsAtMs ?? Infinity))[0];
+  const byWindow = new Map();
+  for (const e of candidates) {
+    const best = byWindow.get(e.window);
+    if (!best || (TRUST[e.label] || 0) > (TRUST[best.label] || 0)) byWindow.set(e.window, e);
+  }
+  return [...byWindow.values()].sort((a, b) => b.usedPercent - a.usedPercent || (a.resetsAtMs ?? Infinity) - (b.resetsAtMs ?? Infinity))[0];
 }

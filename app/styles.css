@@ -212,3 +212,21 @@ code, .sha { font-family: var(--mono); font-size: 0.86em; word-break: break-all;
 .demo__row p { margin: 0; }
 .agent-log { margin: 12px 0 0; padding: 10px 14px 10px 32px; border-radius: 10px; background: var(--surface-2); font-size: 0.9rem; display: grid; gap: 3px; }
 .notice { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: var(--amber-bg); color: var(--ink); border: 1px solid var(--amber); }
+
+/* slice 3: confirmations, manual limits, picked folder */
+.btn--small { padding: 6px 12px; min-height: 36px; font-size: 0.86rem; }
+.sources__note .btn--small { margin-left: 4px; vertical-align: middle; }
+.confirm { margin: 10px 0 4px; padding: 12px; border-radius: 10px; border: 1px dashed var(--teal); background: var(--teal-bg); display: grid; gap: 8px; }
+.confirm p { margin: 0; }
+.confirm .btn { justify-self: start; }
+.limit-form { margin: 12px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.limit-form .sub-title { margin-top: 0; }
+.limit-form__grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.limit-form label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.limit-form input, .limit-form select {
+  font: inherit; font-weight: 400; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 44px; width: 100%; box-sizing: border-box;
+}
+.limit-form input:focus-visible, .limit-form select:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.form-error { color: var(--red); font-weight: 600; margin: 10px 0 0; }
+.limit__meta .btn--small { margin-left: 6px; }
