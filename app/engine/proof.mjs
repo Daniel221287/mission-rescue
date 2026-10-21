@@ -43,8 +43,14 @@ function readPath(value, path) {
   return current;
 }
 
+// Deep equality for JSON values; the order of object keys does not matter.
 function sameValue(a, b) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) return a.length === b.length && a.every((value, i) => sameValue(value, b[i]));
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((k) => Object.prototype.hasOwnProperty.call(b, k) && sameValue(a[k], b[k]));
 }
 
 export function runCheck(check, bytes) {
@@ -77,8 +83,13 @@ export function findConfirmation(confirmations, missionKey, taskId, sha256) {
 }
 
 export async function judgeTask(task, events, source, { confirmations = [], missionKey = null } = {}) {
-  const own = events.filter((e) => e.task === task.id);
-  const started = own.find((e) => e.event === 'started' || e.event === 'progress') || null;
+  // The log is append-only, so the order of its lines is the order of the work, even if the
+  // agent's clock jumps back a little between two lines.
+  const own = events.filter((e) => e.task === task.id).sort((a, b) => (a.line ?? 0) - (b.line ?? 0));
+  // A task can be started again (a retry, or a rescue): the work clock follows the latest start.
+  // Agents that never log "started" are timed from their first "progress" line.
+  const starts = own.filter((e) => e.event === 'started');
+  const started = starts.length ? starts[starts.length - 1] : own.find((e) => e.event === 'progress') || null;
   const doneEvents = own.filter((e) => e.event === 'done');
   const lastDone = doneEvents.length ? doneEvents[doneEvents.length - 1] : null;
   const lastEvent = own.length ? own[own.length - 1] : null;

@@ -59,13 +59,13 @@ You can also open a single mission folder (one with `mission.json` inside).
 | `stallMinutes` | Optional, default 30: the shortest silence that may look suspicious. |
 | `tasks[].id` | Unique positive whole numbers, in the order of the work. |
 | `tasks[].expectedMinutes` | Optional: how long the task usually takes. The silence threshold is the longer of `stallMinutes` and 1.5 × this. |
-| `tasks[].artifact.file` | The result file, a path inside the mission folder (no `..`, no absolute paths). |
-| `tasks[].artifact.check` | `{"type":"contains","text":…}`, `{"type":"json","path":"a.b","equals":…}` or `{"type":"nonEmpty"}`. |
-| `tasks[].effect` | Only for tasks that change something outside the computer (send, pay, publish). `where` should read naturally after "in" / "w". A person confirms it in the page; no file can prove it. |
+| `tasks[].artifact.file` | The result file, a path inside the mission folder (no `..`, no absolute paths, no hidden folders whose name starts with a dot). |
+| `tasks[].artifact.check` | `{"type":"contains","text":…}`, `{"type":"json","path":"a.b","equals":…}` (compared as JSON values, so the order of keys does not matter) or `{"type":"nonEmpty"}`. |
+| `tasks[].effect` | Only for tasks that change something outside the computer (send, pay, publish). `kind` may be left out (the only kind is `external`). `where` should read naturally after "in" / "w". A person confirms it in the page; no file can prove it. |
 
 ## 3. worklog.jsonl
 
-One JSON object per line, appended, never rewritten. `at` is an ISO 8601 time with its time zone (`2026-10-21T14:05:00+02:00` or `…Z`).
+One JSON object per line, appended, never rewritten. `at` is an ISO 8601 time with its time zone (`2026-10-21T14:05:00+02:00` or `…Z`). A time without a zone is read as the local time of the computer that checks it, and the page reports it; a time more than 5 minutes ahead of that computer's clock makes the diagnosis "undetermined", because the agent then writes the wrong time zone.
 
 ```json
 {"at":"2026-10-21T14:00:00+02:00","event":"started","task":1}
@@ -81,7 +81,7 @@ One JSON object per line, appended, never rewritten. `at` is an ISO 8601 time wi
 
 | Event | When | Extra fields |
 |---|---|---|
-| `started` | before a task | `task` |
+| `started` | before a task, and again when the task is retried or resumed | `task` |
 | `progress` | optional, during a task | `task`, `message` |
 | `done` | after a task, when its file is written | `task`, `artifact: {file, sha256}` (required for a proof) |
 | `waiting` | when the agent must stop | `reason`: `limit`, `human` or `other`; optional `until`, `question`, `message` |
@@ -91,6 +91,8 @@ One JSON object per line, appended, never rewritten. `at` is an ISO 8601 time wi
 What makes a task green: the latest `done` names the task's file, the file exists, its SHA-256 equals the declared one, the condition passes, and (for an outside effect) a person confirmed it. A result file that exists but was never declared is an uncertain effect: the rescue plan tells the agent to check it, not to repeat the task blindly. Broken lines are listed with their line numbers and skipped.
 
 ## 4. SHA-256 of a file
+
+Write only the 64 hex characters. If a tool prints the file name after the hash (as `shasum` and `sha256sum` do), Mission Rescue ignores the name.
 
 | System | Command |
 |---|---|
@@ -109,7 +111,7 @@ Add this to the agent's task or system instructions, with your folder name.
 This mission is tracked by Mission Rescue in the folder <FOLDER>.
 1. Read <FOLDER>/mission.json. Do the tasks in order. Each task must write exactly the result
    file named in it, and the file must meet the task's condition.
-2. Before a task, append one line to <FOLDER>/worklog.jsonl:
+2. Before a task (also when you retry or resume it), append one line to <FOLDER>/worklog.jsonl:
    {"at":"<now, ISO 8601 with time zone>","event":"started","task":<N>}
 3. After a task, compute the SHA-256 of its result file and append:
    {"at":"<now>","event":"done","task":<N>,"artifact":{"file":"<file>","sha256":"<SHA-256>"}}
@@ -128,7 +130,7 @@ This mission is tracked by Mission Rescue in the folder <FOLDER>.
 Tę misję sprawdza Mission Rescue w folderze <FOLDER>.
 1. Przeczytaj <FOLDER>/mission.json. Rób zadania po kolei. Każde zadanie zapisuje dokładnie
    plik wyniku podany w misji, a plik musi spełniać warunek zadania.
-2. Przed zadaniem dopisz jedną linię do <FOLDER>/worklog.jsonl:
+2. Przed zadaniem (także gdy je ponawiasz albo wznawiasz) dopisz jedną linię do <FOLDER>/worklog.jsonl:
    {"at":"<teraz, ISO 8601 ze strefą czasu>","event":"started","task":<N>}
 3. Po zadaniu policz SHA-256 pliku wyniku i dopisz:
    {"at":"<teraz>","event":"done","task":<N>,"artifact":{"file":"<plik>","sha256":"<SHA-256>"}}
@@ -157,7 +159,7 @@ Mission Rescue never logs in to chat sites. It shows limits from three places, e
   It writes `missions/limits/limits.auto.json` (labelled AUTOMATICALLY VERIFIED for 30 minutes, then OUT OF DATE) and prints a short status line. Options: `--workspace <missions folder>`, `--silent`, `--lang en`. It reads only what Claude Code passes to it and never contacts any service.
 - **`limits/*.json` files** in the missions folder: `{"source":"auto" or "demo","capturedAt":"…","plans":[{"plan":"Claude Max","window":"5h","usedPercent":42,"resetsAt":"…"}]}`.
 
-When several numbers describe the same plan and window, the most trusted one is used (automatically verified, then manual, then demo); out-of-date numbers are never used for a diagnosis.
+When several numbers describe the same plan and window, the most trusted one is used (automatically verified, then manual, then demo); out-of-date numbers are never used for a diagnosis. Demo numbers (written with the built-in samples) are used only for the sample missions, never for your own.
 
 ## 7. In scripts and CI
 

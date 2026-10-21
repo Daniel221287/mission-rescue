@@ -39,7 +39,7 @@ From `scope.md > Inspiration & Identity` and Daniel's words (15:04 and 15:23):
 - "Simple to use, attractive"; "a nice, clear app"; "in our modern style" (the team's 3D demo websites).
 - Status colours carry the meaning and always come with a text label: green = proven, yellow = waiting, unproven or uncertain, red = stopped or proof failed, teal = waiting for you, grey = not started or undetermined.
 - One subtle 3D status beacon that glows the mission's colour. It never covers text and stops moving for reduced-motion users.
-- Polish by default, English on a switch. Plain words, short bold labels, no walls of text.
+- Polish by default, English on a switch (a browser set to another language opens in English). Plain words, short bold labels, no walls of text.
 
 ## Features and Behavior
 
@@ -104,7 +104,7 @@ Whenever a mission is not complete, the rescue panel shows the last confirmed ch
 - **Najpierw sprawdź, czy już się wykonało** (check first) for every task whose effect is uncertain (started, present but undeclared, declared with a failed proof, or an external effect): the exact check (which file, which condition, or which outside system to look at), and what to do for each outcome. An operation with an unknown effect is never simply repeated.
 - **Zrób** (do) for tasks not started, in order.
 - **Potwierdź** (confirm) for external effects waiting for a person.
-It also gives a ready resume instruction in Polish (English on the switch) with a Copy button, including the rule for logging each result with its fingerprint. In this version Daniel passes the instruction to the agent himself; Mission Rescue never runs agents or edits mission files.
+It also gives a ready resume instruction in Polish (English on the switch) with a Copy button, including the rule for logging each start and each result with its fingerprint. In this version Daniel passes the instruction to the agent himself; Mission Rescue never runs agents or edits mission files.
 
 - [ ] For the jury sample: checkpoint task 3; remaining 4–7; task 4 "Najpierw sprawdź" with its file and condition; 5–7 "Zrób".
 - [ ] Copy copies exactly the instruction shown.

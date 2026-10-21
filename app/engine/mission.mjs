@@ -157,13 +157,19 @@ export function parseMission(text) {
     const taskTitle = text2(task.title);
     if (!taskTitle) problems.push(problem('bad-task-title', where));
     const artifact = task.artifact;
-    if (!artifact || !isSafeRelPath(artifact.file)) return problems.push(problem('bad-artifact', where));
+    // Result files live in normal folders: hidden ones (".name") are skipped by some sources
+    // (the local program, the browser's folder fallback), so every source would not agree.
+    if (!artifact || !isSafeRelPath(artifact.file) || safeRelPath(artifact.file).split('/').some((part) => part.startsWith('.'))) {
+      return problems.push(problem('bad-artifact', where));
+    }
     const check = validateCheck(artifact.check);
     if (!check) return problems.push(problem('bad-check', where));
     let effect = null;
     if (task.effect != null) {
       const whereText = text2(task.effect.where);
-      if (task.effect.kind !== 'external' || !whereText) return problems.push(problem('bad-effect', where));
+      // "kind" may be left out: "external" is the only kind there is.
+      const kind = task.effect.kind ?? 'external';
+      if (kind !== 'external' || !whereText) return problems.push(problem('bad-effect', where));
       effect = { kind: 'external', where: whereText };
     }
     tasks.push({

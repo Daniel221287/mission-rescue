@@ -63,6 +63,20 @@ async function listFiles(root) {
   return files.sort();
 }
 
+// Only requests addressed to this computer: a web page elsewhere cannot point its own
+// domain at 127.0.0.1 and read the missions folder through this program (DNS rebinding).
+const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+export function isLocalHost(hostHeader) {
+  const host = String(hostHeader || '').trim().toLowerCase().replace(/:\d+$/, '');
+  return LOCAL_HOSTS.has(host);
+}
+
+// The real file (links followed) must still be inside its folder.
+async function realInside(root, file) {
+  const [realRoot, realFile] = await Promise.all([fs.realpath(root).catch(() => root), fs.realpath(file)]);
+  return realFile === realRoot || realFile.startsWith(realRoot + path.sep) ? realFile : null;
+}
+
 function send(res, status, body, headers = {}) {
   res.writeHead(status, {
     'Cache-Control': 'no-store',
@@ -79,6 +93,7 @@ export function createServer({ workspace = path.join(ROOT, 'missions'), appRoot 
   return http.createServer(async (req, res) => {
     try {
       if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'read-only', { Allow: 'GET, HEAD' });
+      if (!isLocalHost(req.headers.host)) return send(res, 403, 'forbidden host');
       const url = new URL(req.url, 'http://127.0.0.1');
       let pathname;
       try {
@@ -106,7 +121,9 @@ export function createServer({ workspace = path.join(ROOT, 'missions'), appRoot 
       try {
         const stat = await fs.stat(file);
         if (stat.isDirectory()) file = path.join(file, 'index.html');
-        data = await fs.readFile(file);
+        const real = await realInside(pathname.startsWith('/workspace/') ? workspaceRoot : siteRoot, file);
+        if (!real) return send(res, 403, 'forbidden');
+        data = await fs.readFile(real);
       } catch {
         return send(res, 404, 'not found');
       }

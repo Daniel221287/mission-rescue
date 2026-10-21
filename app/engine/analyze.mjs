@@ -60,7 +60,10 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
   const missionKey = mission.id || dir;
   const tasks = [];
   for (const task of mission.tasks) tasks.push(await judgeTask(task, events, source, { confirmations, missionKey }));
-  const verdict = diagnose({ mission, tasks, events, now: nowMs, limits });
+  // Demo numbers (written with the built-in samples) explain the samples only; they never
+  // decide anything about a real mission, even one that uses the same plan name.
+  const usableLimits = mission.demo ? limits : limits.filter((entry) => entry.label !== 'demo');
+  const verdict = diagnose({ mission, tasks, events, now: nowMs, limits: usableLimits, logProblems: logProblems.length });
 
   const report = {
     dir,

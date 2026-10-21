@@ -152,8 +152,12 @@ function instructionText(report, plan, lang) {
     n += 1;
   }
   lines.push(en
-    ? `${n}. AFTER EACH TASK add one line to worklog.jsonl:`
-    : `${n}. PO KAŻDYM ZADANIU dopisz jedną linię do worklog.jsonl:`);
+    ? `${n}. LOG EACH TASK in worklog.jsonl, with the time and its time zone. Before you start it:`
+    : `${n}. ZAPISUJ KAŻDE ZADANIE w worklog.jsonl, z czasem i strefą czasową. Przed startem zadania:`);
+  lines.push(en
+    ? '   {"at":"<ISO time>","event":"started","task":<N>}'
+    : '   {"at":"<czas ISO>","event":"started","task":<N>}');
+  lines.push(en ? '   After it, when its file is written:' : '   Po zadaniu, gdy plik jest zapisany:');
   lines.push(en
     ? '   {"at":"<ISO time>","event":"done","task":<N>,"artifact":{"file":"<file>","sha256":"<SHA-256 of the file>"}}'
     : '   {"at":"<czas ISO>","event":"done","task":<N>,"artifact":{"file":"<plik>","sha256":"<SHA-256 pliku>"}}');

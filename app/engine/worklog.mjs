@@ -20,10 +20,24 @@ function problem(code, line, params = {}) {
   return { file: LOG_FILE, line, code, ...params };
 }
 
+// The 64 hex characters of a SHA-256, also when the agent pasted a tool's whole output
+// ("<hash>  out/file.md", a trailing newline, upper case, or bytes separated by spaces).
+export function cleanSha256(value) {
+  if (typeof value !== 'string') return null;
+  const text = value.trim().toLowerCase();
+  const joined = text.replace(/\s+/g, '');
+  if (/^[0-9a-f]{64}$/.test(joined)) return joined;
+  return text.split(/\s+/)[0] || null;
+}
+
+// ISO 8601 with a time zone: ends with Z or an offset such as +02:00.
+const HAS_ZONE = /(?:z|[+-]\d{2}(?::?\d{2})?)$/i;
+
 export function parseWorklog(text, { taskIds } = {}) {
   const events = [];
   const problems = [];
   const known = taskIds ? new Set(taskIds) : null;
+  const noZone = [];
   const lines = String(text ?? '').split(/\r?\n/);
   lines.forEach((raw, index) => {
     const line = index + 1;
@@ -38,6 +52,9 @@ export function parseWorklog(text, { taskIds } = {}) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return problems.push(problem('not-an-object', line));
     const atMs = Date.parse(entry.at);
     if (typeof entry.at !== 'string' || !Number.isFinite(atMs)) return problems.push(problem('bad-time', line));
+    // Without a time zone the time is read as this computer's local time; it still counts,
+    // but the result then depends on where Mission Rescue runs, so it is reported.
+    if (!HAS_ZONE.test(entry.at.trim())) noZone.push(line);
     if (!EVENTS.includes(entry.event)) return problems.push(problem('unknown-event', line, { found: String(entry.event ?? '') }));
     let task = null;
     if (entry.task != null) {
@@ -53,7 +70,7 @@ export function parseWorklog(text, { taskIds } = {}) {
     if (entry.event === 'done' && entry.artifact && typeof entry.artifact === 'object') {
       event.artifact = {
         file: typeof entry.artifact.file === 'string' ? entry.artifact.file : null,
-        sha256: typeof entry.artifact.sha256 === 'string' ? entry.artifact.sha256.toLowerCase() : null,
+        sha256: cleanSha256(entry.artifact.sha256),
       };
     }
     if (entry.event === 'waiting') {
@@ -70,6 +87,7 @@ export function parseWorklog(text, { taskIds } = {}) {
     if (message) event.message = message;
     events.push(event);
   });
+  if (noZone.length) problems.push(problem('time-without-zone', noZone[0], { count: noZone.length }));
   events.sort((a, b) => a.atMs - b.atMs || a.line - b.line);
   return { events, problems };
 }

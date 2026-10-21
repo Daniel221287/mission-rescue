@@ -67,38 +67,39 @@ Carried from `prd.md > Look and Feel`.
 
 ### Mission Reader
 
-Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent` (text or `{pl, en}`), optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`, where `where` reads naturally after "w" / "in", e.g. "folderze „Wysłane” w poczcie" / "the mail \"Sent\" folder"). Reports problems with the file name, and for broken JSON the line where the text stops being valid (found by the engine itself, the same in every browser and in Node.js).
+Reads `mission.json`: `format` = `mission-rescue/1`, `id`, `title` (`{pl, en}`), `agent` (text or `{pl, en}`), optional `plan` (the subscription the agent uses), optional `stallMinutes` (default 30), `tasks[]` with `id` (unique positive integers), `title` (`{pl, en}`), optional `expectedMinutes`, `artifact` (`file`: a relative path inside the mission folder, not in a hidden folder; `check`: `{type: "contains", text}` | `{type: "json", path, equals}` (values compared deeply, key order does not matter) | `{type: "nonEmpty"}`), optional `effect` (`{kind: "external", where: {pl, en}}`, `kind` may be left out, where `where` reads naturally after "w" / "in", e.g. "folderze „Wysłane” w poczcie" / "the mail \"Sent\" folder"). Reports problems with the file name, and for broken JSON the line where the text stops being valid (found by the engine itself, the same in every browser and in Node.js).
 File: `app/engine/mission.mjs`. PRD ref: `prd.md > Mission Tracker`.
 
 ### Work Log Reader
 
-Reads `worklog.jsonl`: one JSON object per line with `at` (ISO time), `event` (`started`, `progress`, `done`, `waiting`, `error`, `heartbeat`, `note`), optional `task`; `done` carries `artifact: {file, sha256}`; `waiting` carries `reason` (`limit`, `human`, `other`), optional `until` and `question`; `error` carries `message`; any event may carry a `message`. `question` and `message` are plain text or the same text in both languages (`{"pl": …, "en": …}`), shown in the screen's language. Broken lines are reported with their line numbers and skipped.
+Reads `worklog.jsonl`: one JSON object per line with `at` (ISO time with its time zone; a time without a zone is read as the local time and reported once with the number of such lines), `event` (`started`, `progress`, `done`, `waiting`, `error`, `heartbeat`, `note`), optional `task`; `done` carries `artifact: {file, sha256}` (the 64 hex characters; a pasted tool output such as `<hash>  file` is cleaned); `waiting` carries `reason` (`limit`, `human`, `other`), optional `until` and `question`; `error` carries `message`; any event may carry a `message`. `question` and `message` are plain text or the same text in both languages (`{"pl": …, "en": …}`), shown in the screen's language. Broken lines are reported with their line numbers and skipped.
 File: `app/engine/worklog.mjs`. PRD ref: `prd.md > Mission Tracker`, `prd.md > States and Boundaries`.
 
 ### Proof Engine
 
-For each task: level 1 (latest `done` with artifact info), level 2 (the mission's artifact file exists), level 3 (SHA-256 equals the declared one, the declared file is the mission's file, and the check passes), level 4 (only with `effect`: a human confirmation for this mission, task and exact SHA-256). Task states: `proven`, `declared-no-artifact-info`, `artifact-missing`, `hash-mismatch`, `wrong-result`, `undeclared-result`, `effect-unconfirmed`, `in-progress`, `failed`, `not-started`. Never runs commands; only reads.
+For each task (its log lines taken in the order they were written, so a clock that jumps back cannot reorder them): level 1 (latest `done` with artifact info), level 2 (the mission's artifact file exists), level 3 (SHA-256 equals the declared one, the declared file is the mission's file, and the check passes), level 4 (only with `effect`: a human confirmation for this mission, task and exact SHA-256). Task states: `proven`, `declared-no-artifact-info`, `artifact-missing`, `hash-mismatch`, `wrong-result`, `undeclared-result`, `effect-unconfirmed`, `in-progress`, `failed`, `not-started`. Never runs commands; only reads.
 File: `app/engine/proof.mjs` (fingerprints: `app/engine/hash.mjs`). PRD ref: `prd.md > Proof Engine`.
 
 ### Stall Detector
 
-Inputs: task results, events, now, the mission's stall time, the current task's expected time, limits. The current task is the first task that is neither proven nor only waiting for a person's confirmation. Waiting time T = max(stallMinutes, 1.5 × expectedMinutes of the current task). Progress time = the latest verified result's `done` (a proven task, or a verified file whose outside effect is not confirmed yet), or the first event. Activity time = the latest event of any kind. First matching rule wins:
+Inputs: task results, events, now, the mission's stall time, the current task's expected time, limits. The current task is the first task that is neither proven nor only waiting for a person's confirmation. Waiting time T = max(stallMinutes, 1.5 × expectedMinutes of the current task). Progress time = the latest verified result's `done` (a proven task, or a verified file whose outside effect is not confirmed yet), or the first event. The current task's work clock starts at its latest `started` (a retried or rescued task starts again), or its first `progress` if it never logs `started`. Activity time = the latest event of any kind. First matching rule wins:
 1. all tasks green → `complete`;
 2. a declared task fails its proof → `proof-problem` (high);
 2a. every unfinished task only waits for a person to confirm its outside effect → `needs-confirmation` (high; added during the build so a finished agent is not shown as "working" or "stalled" while the person has to look at the outside world);
-3. no events → `not-started`;
+3. no readable events: if result files already exist or the log has unreadable lines → `undetermined` (medium; starting the agent again could repeat an outside effect), otherwise → `not-started`;
 4. latest meaningful event is `error` → `likely-failure` (high);
 5. latest meaningful event is `waiting` for a person → `waiting-human` (high);
 6. latest meaningful event is `waiting` for a limit: reset in the future → `waiting-limit` (high if the limits agree, else medium); reset passed more than T ago with no activity since → `likely-failure` (medium); otherwise `waiting-limit` (medium);
-7. no progress for longer than T and activity within T (heartbeats only) → `no-progress` (high if longer than 2T, else medium);
+6a. the latest event is more than 5 minutes ahead of the computer's clock → `undetermined` (low; the agent writes the wrong time zone, so silence cannot be measured);
+7. no progress for longer than T and activity within T (heartbeats, notes or progress messages only) → `no-progress` (high if longer than 2T, else medium);
 8. silence longer than T: the plan's limit is used up (≥ 95 %) with a future reset → `waiting-limit` (medium, inferred); silence longer than 3T → `likely-failure` (high if the current task left an incomplete result file, else medium); otherwise → `undetermined` (low);
 9. otherwise → `working` (medium).
-Each verdict carries facts (last proven task and time, last signal and time, silence length, waiting time T, limit state, incomplete file, where to check an outside effect) for the screen. Limits used here are never out of date; when several numbers describe the same plan and window, the most trusted one wins (verified automatically, then manual, then demo). The mission list puts what needs attention first (proof problem, likely failure, unreadable, no progress, needs confirmation, waiting for a person, waiting for a limit, undetermined, working, not started, complete).
+Each verdict carries facts (last proven task and time, last signal and time, silence length, waiting time T, limit state, incomplete file, where to check an outside effect) for the screen. Limits used here are never out of date, and demo numbers are used only for the built-in sample missions; when several numbers describe the same plan and window, the most trusted one wins (verified automatically, then manual, then demo). The mission list puts what needs attention first (proof problem, likely failure, unreadable, no progress, needs confirmation, waiting for a person, waiting for a limit, undetermined, working, not started, complete).
 File: `app/engine/stall.mjs`. PRD ref: `prd.md > Stall Detector`.
 
 ### Rescue Planner
 
-When not complete: checkpoint (highest task with every task up to it green), remaining tasks with actions `check-first` (in progress, undeclared result, failed proof, unconfirmed or claimed outside effect), `do` (not started), `confirm` (outside effect waiting for a person), each with exact checks and per-outcome steps; plus the resume instruction text in Polish and English (what not to repeat, what to check first, what to do next, how to log results with SHA-256, how to log waiting). Also the machine-readable plan used by the Sample Agent.
+When not complete: checkpoint (highest task with every task up to it green), remaining tasks with actions `check-first` (in progress, undeclared result, failed proof, unconfirmed or claimed outside effect), `do` (not started), `confirm` (outside effect waiting for a person), each with exact checks and per-outcome steps; plus the resume instruction text in Polish and English (what not to repeat, what to check first, what to do next, how to log each start and each result with SHA-256, how to log waiting). Also the machine-readable plan used by the Sample Agent.
 File: `app/engine/rescue.mjs`. PRD ref: `prd.md > Mission Rescue`.
 
 ### Limit Guardian
@@ -128,12 +129,12 @@ PRD ref: `prd.md > Screens and Layout`, `prd.md > Polish Command Center`, `prd.m
 
 ### Local Program
 
-`tools/server.mjs`: `node:http` on `127.0.0.1:4317`; serves the repository's `index.html` and `app/`, and the workspace read-only under `/workspace/` with `/workspace/index.json` listing its folders and files; `Cache-Control: no-store`; refuses paths outside, hidden files and anything but GET/HEAD.
+`tools/server.mjs`: `node:http` on `127.0.0.1:4317`; serves the repository's `index.html` and `app/`, and the workspace read-only under `/workspace/` with `/workspace/index.json` listing its folders and files; `Cache-Control: no-store`; refuses paths outside, hidden files, links whose target is outside the folder, requests not addressed to `127.0.0.1` / `localhost` (protection against DNS rebinding) and anything but GET/HEAD.
 PRD ref: `prd.md > Mission Tracker`, `prd.md > States and Boundaries`.
 
 ### Command-Line Tool
 
-`tools/mission-rescue.mjs`: `check <folder>` (verdict, levels, rescue instruction; `--json`, `--lang`), `demo-reset [--workspace]`, `demo-agent <folder> [--delay ms]`. Exit code 0 when complete, 1 when not complete, 2 on input errors.
+`tools/mission-rescue.mjs`: `check <folder>` (verdict, levels, rescue instruction; `--json`, `--lang`), `demo-reset [--workspace]`, `demo-agent <folder> [--delay ms]`, `honesty-test <folder>` (the last two only on the sample mission). Exit code 0 when complete, 1 when not complete, 2 on input errors.
 PRD ref: `prd.md > Demo and Self-Check`.
 
 ### Agent Protocol Guide

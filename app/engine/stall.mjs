@@ -23,6 +23,10 @@ export const VERDICT_COLOR = {
 
 const LIMIT_USED_UP = 95;
 const SIGNS_OF_LIFE = new Set(['heartbeat', 'note']);
+// "I'm still working" lines that are not a proven result (prd.md: they are not progress).
+const STILL_WORKING = new Set(['heartbeat', 'note', 'progress']);
+// A log line this far ahead of the computer's clock means the agent writes the wrong time zone.
+const FUTURE_TOLERANCE_MS = 5 * 60000;
 
 function verdict(code, confidence, reason, facts, extra = {}) {
   return { code, color: VERDICT_COLOR[code], confidence, reason, facts, ...extra };
@@ -33,7 +37,7 @@ export function waitingTimeMs(mission, currentTask) {
   return Math.max(mission.stallMinutes, expected) * 60000;
 }
 
-export function diagnose({ mission, tasks, events, now, limits = [] }) {
+export function diagnose({ mission, tasks, events, now, limits = [], logProblems = 0 }) {
   const nowMs = typeof now === 'number' ? now : Date.parse(now);
   const total = tasks.length;
   const proven = tasks.filter((t) => t.state === 'proven');
@@ -67,6 +71,15 @@ export function diagnose({ mission, tasks, events, now, limits = [] }) {
   }
 
   if (!events.length) {
+    // Nothing readable in the log. If result files already exist, or the log has lines that
+    // cannot be read, the agent may well have worked: starting it again could repeat an
+    // outside effect (for example send an offer twice), so this is not "not started".
+    const withFiles = tasks.filter((t) => t.artifact && t.artifact.exists).map((t) => t.id);
+    if (withFiles.length || logProblems > 0) {
+      return verdict('undetermined', 'medium', { key: 'no-readable-log', params: { tasks: withFiles, broken: logProblems } }, [
+        { key: 'proven-count', params: { proven: proven.length, total } },
+      ], { currentTask: withFiles.length ? withFiles[0] : null });
+    }
     return verdict('not-started', 'high', { key: 'no-events', params: {} }, []);
   }
 
@@ -124,9 +137,18 @@ export function diagnose({ mission, tasks, events, now, limits = [] }) {
     return verdict('undetermined', 'medium', { key: 'waiting-other', params: { message: w.message || w.question || '' } }, facts, base);
   }
 
+  // A last line far in the future: the agent's times are in the wrong time zone, so its
+  // silence cannot be measured (otherwise a stopped agent would look busy for hours).
+  const ahead = lastEvent.atMs - nowMs;
+  if (ahead > FUTURE_TOLERANCE_MS) {
+    return verdict('undetermined', 'low', { key: 'future-time', params: { aheadMs: ahead, line: lastEvent.line ?? null } }, facts, base);
+  }
+
   if (noProgress > T && silence <= T) {
-    const beats = events.filter((e) => e.atMs > workStart && e.event !== 'done').length;
-    return verdict('no-progress', noProgress > 2 * T ? 'high' : 'medium', { key: 'signs-of-life-only', params: { sinceMs: noProgress, beats } }, facts, base);
+    const beats = events.filter((e) => e.atMs > workStart && STILL_WORKING.has(e.event)).length;
+    if (beats > 0) {
+      return verdict('no-progress', noProgress > 2 * T ? 'high' : 'medium', { key: 'signs-of-life-only', params: { sinceMs: noProgress, beats } }, facts, base);
+    }
   }
 
   if (silence > T) {

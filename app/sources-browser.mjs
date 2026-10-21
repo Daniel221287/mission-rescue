@@ -30,7 +30,10 @@ export async function localProgramAvailable() {
   if (!servedFromThisComputer()) return false;
   try {
     const response = await fetch('/workspace/index.json', { cache: 'no-store' });
-    return response.ok && (response.headers.get('content-type') || '').includes('json');
+    const ok = response.ok && (response.headers.get('content-type') || '').includes('json');
+    // Read the body so the request does not stay open.
+    await response.text().catch(() => '');
+    return ok;
   } catch {
     return false;
   }

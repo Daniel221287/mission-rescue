@@ -32,7 +32,7 @@ cd mission-rescue
 node tools/server.mjs --open
 ```
 
-On Windows you can double-click **START.cmd** instead. The page opens at `http://127.0.0.1:4317/app/`. On first start the sample missions are written to `missions/`; the page reads that folder through a small read-only local program (it serves files, it never changes them).
+On Windows you can double-click **START.cmd** instead. The page opens at `http://127.0.0.1:4317/app/` (if that port is busy: `node tools/server.mjs --port 4318 --open`). On first start the sample missions are written to `missions/`; the page reads that folder through a small read-only local program (it serves files, it never changes them). There the page opens on **This computer**, the `missions/` folder: drive its sample mission with the command-line demo below, or switch to **Sample missions** for the in-page **Run the sample agent** and **Honesty test** buttons.
 
 The same demo from the command line (the output is in Polish by default; `--lang en` switches it to English):
 
@@ -46,7 +46,7 @@ node tools/mission-rescue.mjs check missions/weekly-report --lang en          # 
 node tools/mission-rescue.mjs demo-reset                                      # back to the start
 ```
 
-`check` exits with 0 only when the mission is complete and proven (1: not complete, 2: unreadable), so it can guard a script or a CI step. Run the tests with `node --test` (48 tests: proof levels, every stop verdict, the rescue plan, red to green to red in memory and on disk, limits labels, the status-line capture, the picked-folder sources).
+`check` exits with 0 only when the mission is complete and proven (1: not complete, 2: unreadable), so it can guard a script or a CI step. Run the tests with `node --test` (57 tests: proof levels, every stop verdict, the rescue plan, red to green to red in memory and on disk, resumed tasks and agent clocks, limits labels, the status-line capture, the picked-folder sources, the local program's safety).
 
 You can also open your own missions folder in the page (**Picked folder**, Chrome or Edge on a computer): the browser reads the files, read-only, and nothing is uploaded.
 
@@ -54,11 +54,11 @@ You can also open your own missions folder in the page (**Picked folder**, Chrom
 
 **Four proof levels for every task.** 1. *Declared*: the agent logged "done" with the result file and its SHA-256. 2. *File exists*. 3. *Verified*: the fingerprint matches and the mission's condition passes (contains a text, a JSON value equals the expected one, or not empty). 4. *Outside effect* (only for tasks like "send the offer"): no file can prove the outside world, so a person confirms it, tied to that exact file version. A task is green only when every level that applies is met; a file that exists but was never declared is an *uncertain effect*, never green.
 
-**Silence is not automatically a failure.** The waiting time grows with the task (the longer of the mission's threshold, default 30 min, and 1.5 × the task's expected time). Heartbeats and notes are signs of life, not progress. Verdicts: likely failure, no progress, waiting for a limit, waiting for you, waiting for your confirmation, working, undetermined, proof problem, complete. Each comes with the concrete reason, the facts used and a confidence level (high, medium, low).
+**Silence is not automatically a failure.** The waiting time grows with the task (the longer of the mission's threshold, default 30 min, and 1.5 × the task's expected time), and a task started again (a retry or a rescue) is timed from its latest start. Heartbeats, notes and "still working" messages are signs of life, not progress. If the agent's times run ahead of the computer's clock (a wrong time zone), the verdict says it cannot judge the silence instead of guessing. Verdicts: likely failure, no progress, waiting for a limit, waiting for you, waiting for your confirmation, working, undetermined, proof problem, complete. Each comes with the concrete reason, the facts used and a confidence level (high, medium, low).
 
 **Rescue without blind repeats.** The plan names the last confirmed checkpoint, the tasks not to repeat, the tasks to *check first* (their effect is uncertain: if the result is already there, report it instead of doing it again), the tasks to redo, the tasks to do, and what only a person can confirm. You hand the instruction to your agent; Mission Rescue never runs agents.
 
-**Limits, labelled by where the numbers come from:** DEMO, MANUAL (typed in the page), AUTOMATICALLY VERIFIED (captured from Claude Code's official status line by `tools/claude-statusline.mjs`, fresh for 30 minutes) and OUT OF DATE. Mission Rescue never logs in to chat sites to read limits.
+**Limits, labelled by where the numbers come from:** DEMO, MANUAL (typed in the page), AUTOMATICALLY VERIFIED (captured from Claude Code's official status line by `tools/claude-statusline.mjs`, fresh for 30 minutes) and OUT OF DATE. Demo numbers explain the sample missions only and never decide anything about your own missions. Mission Rescue never logs in to chat sites to read limits.
 
 ## Connect your own agent
 
@@ -67,6 +67,7 @@ A mission is a folder with `mission.json` (the tasks, each with its result file 
 ## Privacy and safety
 
 - Reads files only on your device: the built-in samples, the local read-only program, or a folder you pick. The page is not allowed to send data anywhere (Content Security Policy `connect-src 'self'`).
+- The local program listens only on `127.0.0.1`, answers only requests addressed to this computer (so another website cannot reach it through DNS rebinding) and never follows a link out of its folders.
 - Never edits mission files, never runs agents, never logs in anywhere. The sample agent and the honesty test work only on the sample mission.
 - Human confirmations and manual limits stay in your browser.
 - Zero cost: no paid services, no API keys.
@@ -102,10 +103,10 @@ Potrzebny [Node.js](https://nodejs.org) 20 lub nowszy, nic więcej. Pobierz repo
 ### Jak to działa w skrócie
 
 - **Cztery poziomy dowodu:** zgłoszone, plik istnieje, zweryfikowany (odcisk SHA-256 i warunek), efekt zewnętrzny potwierdzony przez człowieka.
-- **Cisza to nie automatycznie awaria:** próg rośnie z długością zadania, sygnały „żyję” to nie postęp, każda diagnoza ma powód, fakty i pewność.
+- **Cisza to nie automatycznie awaria:** próg rośnie z długością zadania, wznowione zadanie liczy się od nowego startu, sygnały „żyję” to nie postęp, każda diagnoza ma powód, fakty i pewność.
 - **Plan ratunkowy:** ostatni potwierdzony punkt, czego nie powtarzać, co najpierw sprawdzić, co zrobić, co potwierdza człowiek. Instrukcję przekazujesz agentowi sam.
-- **Limity z etykietą źródła:** DEMO, RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE (pasek stanu Claude Code), NIEAKTUALNE. Bez logowania do czatów.
-- **Prywatność:** tylko odczyt plików na Twoim urządzeniu, nic nie jest wysyłane, zero kosztów.
+- **Limity z etykietą źródła:** DEMO (tylko dla przykładów), RĘCZNE, ZWERYFIKOWANE AUTOMATYCZNIE (pasek stanu Claude Code), NIEAKTUALNE. Bez logowania do czatów.
+- **Prywatność:** tylko odczyt plików na Twoim urządzeniu, nic nie jest wysyłane, lokalny program odpowiada tylko temu komputerowi, zero kosztów.
 
 Format misji i gotowa instrukcja dla agenta (po polsku i angielsku): **[docs/AGENT_PROTOCOL.md](docs/AGENT_PROTOCOL.md)**. Licencja MIT.
 

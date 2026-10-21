@@ -58,7 +58,12 @@ const title2 = (value) => (value ? value[state.lang] || value.pl || value.en : '
 
 function route() {
   const match = location.hash.match(/^#\/m\/(.+)$/);
-  return match ? { mission: decodeURIComponent(match[1]) } : { mission: null };
+  if (!match) return { mission: null };
+  try {
+    return { mission: decodeURIComponent(match[1]) };
+  } catch {
+    return { mission: null }; // a broken address opens the mission list
+  }
 }
 
 function currentSource() {

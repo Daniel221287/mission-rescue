@@ -92,7 +92,11 @@ const D = {
     'reason.all-proven': 'Wszystkie zadania ({total}) mają sprawdzony dowód.',
     'reason.proof-failed': 'Agent zgłosił zadanie {task} jako zrobione, ale dowód nie przechodzi: {stateText}.',
     'reason.no-events': 'Log pracy jest pusty: agent jeszcze nic nie zgłosił.',
+    'reason.no-readable-log.files': 'W logu pracy nie ma żadnego czytelnego wpisu, ale pliki wyników już istnieją (zadania: {tasks}). Sprawdź je, zanim uruchomisz agenta, żeby nic nie zrobił drugi raz.',
+    'reason.no-readable-log.broken': 'Żadnej linii logu pracy nie da się odczytać (szczegóły niżej). Popraw log, zanim uruchomisz agenta.',
+    'reason.future-time': 'Ostatni wpis w logu ma czas o {ahead} późniejszy niż zegar tego komputera. Agent pewnie zapisuje czas w złej strefie, więc nie da się ocenić, jak długo milczy.',
     'reason.error-reported': 'Agent zgłosił błąd w zadaniu {task}: „{message}”',
+    'reason.error-reported.no-task': 'Agent zgłosił błąd: „{message}”',
     'reason.limit-back-agent-not': 'Limit odnowił się {until}, a agent od tego czasu nie wrócił do pracy.',
     'reason.silence.partial': 'Zadanie {task} się zaczęło, jego plik wyniku jest niedokończony, a od {silence} jest cisza. Agent nie napisał, na co czeka.',
     'reason.silence.plain': 'Od {silence} jest cisza w trakcie zadania {task}, bez podanego powodu.',
@@ -170,6 +174,7 @@ const D = {
     'problem.bad-check': '{file}: zadanie {task} ma zły warunek',
     'problem.bad-effect': '{file}: zadanie {task} ma zły opis efektu zewnętrznego',
     'problem.bad-time': '{file}{linePart}: zły czas „at”',
+    'problem.time-without-zone': '{file}{linePart}: czas „at” bez strefy czasowej (takich linii: {count}); liczony w czasie tego komputera',
     'problem.unknown-event': '{file}{linePart}: nieznane zdarzenie „{found}”',
     'problem.unknown-task': '{file}{linePart}: nieznane zadanie {found}',
     'problem.missing-task': '{file}{linePart}: brak numeru zadania',
@@ -314,7 +319,11 @@ const D = {
     'reason.all-proven': 'All tasks ({total}) have a verified proof.',
     'reason.proof-failed': 'The agent reported task {task} as done, but the proof fails: {stateText}.',
     'reason.no-events': 'The work log is empty: the agent has not reported anything yet.',
+    'reason.no-readable-log.files': 'The work log has no readable entry, but result files already exist (tasks: {tasks}). Check them before you start the agent, so that nothing is done twice.',
+    'reason.no-readable-log.broken': 'No line of the work log can be read (details below). Fix the log before you start the agent.',
+    'reason.future-time': "The last log entry is {ahead} later than this computer's clock. The agent probably writes its time in the wrong time zone, so its silence cannot be measured.",
     'reason.error-reported': 'The agent reported an error in task {task}: "{message}"',
+    'reason.error-reported.no-task': 'The agent reported an error: "{message}"',
     'reason.limit-back-agent-not': 'The limit came back {until}, and the agent has not resumed since.',
     'reason.silence.partial': 'Task {task} started, its result file is unfinished, and there has been silence for {silence}. The agent did not say what it is waiting for.',
     'reason.silence.plain': 'Silence for {silence} during task {task}, with no stated reason.',
@@ -392,6 +401,7 @@ const D = {
     'problem.bad-check': '{file}: task {task} has an invalid condition',
     'problem.bad-effect': "{file}: task {task}'s outside effect is invalid",
     'problem.bad-time': '{file}{linePart}: invalid "at" time',
+    'problem.time-without-zone': "{file}{linePart}: \"at\" time without a time zone ({count} such lines); read as this computer's time",
     'problem.unknown-event': '{file}{linePart}: unknown event "{found}"',
     'problem.unknown-task': '{file}{linePart}: unknown task {found}',
     'problem.missing-task': '{file}{linePart}: task number missing',
@@ -566,7 +576,15 @@ export function describeReason(lang, verdict, nowMs = Date.now()) {
     case 'waiting-other':
       return t(lang, 'reason.waiting-other', { message: textIn(lang, params.message) });
     case 'error-reported':
-      return t(lang, 'reason.error-reported', { task: params.task, message: textIn(lang, params.message) });
+      return t(lang, params.task != null ? 'reason.error-reported' : 'reason.error-reported.no-task', { task: params.task, message: textIn(lang, params.message) });
+    case 'no-readable-log': {
+      const parts = [];
+      if (params.tasks && params.tasks.length) parts.push(t(lang, 'reason.no-readable-log.files', { tasks: params.tasks.join(', ') }));
+      else if (params.broken) parts.push(t(lang, 'reason.no-readable-log.broken'));
+      return parts.join(' ');
+    }
+    case 'future-time':
+      return t(lang, 'reason.future-time', { ahead: fmtDuration(params.aheadMs, lang) });
     case 'confirm-effects': {
       const ids = params.tasks || [];
       const and = lang === 'en' ? ' and ' : ' i ';

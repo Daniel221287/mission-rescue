@@ -62,7 +62,7 @@ test('waiting for a person shows the question', async () => {
 
 test('waiting for a limit: said by the agent, corroborated by the limits, or inferred from them', async () => {
   const until = new Date(NOW + 30 * 60000).toISOString();
-  const usedUp = [{ plan: 'Plan X', window: '5h', usedPercent: 100, resetsAt: until, resetsAtMs: NOW + 30 * 60000, label: 'demo' }];
+  const usedUp = [{ plan: 'Plan X', window: '5h', usedPercent: 100, resetsAt: until, resetsAtMs: NOW + 30 * 60000, label: 'manual' }];
   const said = await verdictFor([{ at: at(20), event: 'waiting', task: 2, reason: 'limit', until }]);
   assert.equal(said.code, 'waiting-limit');
   assert.equal(said.confidence, 'medium');

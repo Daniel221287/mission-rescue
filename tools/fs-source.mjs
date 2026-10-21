@@ -24,7 +24,11 @@ export function createFsSource(rootDir, { writable = false, label } = {}) {
     writable,
     async readBytes(rel) {
       try {
-        const buf = await fs.readFile(resolveInside(rel));
+        const full = resolveInside(rel);
+        // Links are followed only if their target is still inside the folder.
+        const [realRoot, realFile] = await Promise.all([fs.realpath(root).catch(() => root), fs.realpath(full)]);
+        if (realFile !== realRoot && !realFile.startsWith(realRoot + path.sep)) return null;
+        const buf = await fs.readFile(realFile);
         return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
       } catch (error) {
         if (error && (error.code === 'ENOENT' || error.code === 'EISDIR' || error.code === 'ENOTDIR')) return null;
