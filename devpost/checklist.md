@@ -64,23 +64,32 @@ Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he 
 ## Hands-on Checkpoints
 
 - [ ] Early usable behavior explored — after slice 2 (the full red-to-green flow on the public demo, phone or computer)
-- [ ] Final kick-the-tires exploration and feedback completed
+  Not done at that point: in fast mode (15:23) Daniel asked to continue without stopping. The same flow was covered by the final check below.
+- [x] Final kick-the-tires exploration and feedback completed
+  21 Oct 2026, 17:23: Daniel reported an independent check by Czacik, his ChatGPT assistant: 48/48 tests passed, a real browser run went 3/7 → 7/7 → tampering detected (6/7), and the phone view passed. His feedback: no new features, finish the submission.
 
 ## Final Review
 
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship
+  17:23, Daniel: "Teraz nie dokładamy kolejnych funkcji! Priorytet P0: doprowadź projekt do kompletnego zgłoszenia na Devpost" (no more features; P0 is the complete Devpost submission). No open feedback; the project shipped as built.
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
+- [x] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [not started]
-Route and stops: [not started]
-Edit outcome: [not started]
-Reflection: [not started]
-Activity mode: [not started]
+Activity and evidence: brief recap with the app map, sent to Daniel with the submission report on 21 Oct 2026; Daniel asked for as few questions as possible (17:44), so there was no guided question round.
+Route and stops: the three stops in `devpost/app-map.html` (one "Check again" click → reading the mission and judging each task → diagnosis and rescue plan → the result on screen).
+Edit outcome: not applicable. Daniel does not edit code himself ("Sam nie potrafię pisać takiego kodu", 17:44).
+Reflection: Daniel's own words (18:00): "przede wszystkim jeszcze lepiej zrozumiałem, jak ważne jest dokładne zaplanowanie pracy i sprawdzanie jej wyników (…) Teraz chcę, żeby każdy etap miał konkretny wynik i dowód, że naprawdę działa." (Above all, I understood even better how important it is to plan the work carefully and check its results. Now I want every stage to have a concrete result and proof that it really works.)
+Activity mode: brief recap (fast mode).
+
+## Shipping
+
+- Demo video (public, 2:30, English subtitles translated literally from Daniel's Polish words): https://www.youtube.com/watch?v=qmY8n-7ZRvM
+- Devpost submission (submitted 21 Oct 2026, 18:33 CEST): https://devpost.com/software/mission-rescue-agent-proof-recovery
+- Submission texts: Daniel's own sentences from his messages (15:04–18:00), spelling fixed and translated literally into English, with the Polish original on the project page.
 
 ## Revisions
 

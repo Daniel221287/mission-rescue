@@ -4,6 +4,8 @@
 
 [Polski opis niżej](#po-polsku) · Live demo: **https://daniel221287.github.io/mission-rescue/** · MIT licence
 
+Demo video (2:30, English subtitles): https://www.youtube.com/watch?v=qmY8n-7ZRvM · Devpost: https://devpost.com/software/mission-rescue-agent-proof-recovery
+
 ![The jury sample mission: three of seven tasks proven, a likely failure with high confidence, and the 3D signal tower glowing red](docs/img/mission-red-en.png)
 
 An agent promises to do a mission from A to Z, finishes part of it, then goes quiet. Mission Rescue reads the agent's own files, checks every result instead of trusting the agent's word, says why the work stopped and how sure it is, and writes a safe plan to finish the mission without repeating what is already done.
@@ -105,3 +107,5 @@ Potrzebny [Node.js](https://nodejs.org) 20 lub nowszy, nic więcej. Pobierz repo
 - **Prywatność:** tylko odczyt plików na Twoim urządzeniu, nic nie jest wysyłane, zero kosztów.
 
 Format misji i gotowa instrukcja dla agenta (po polsku i angielsku): **[docs/AGENT_PROTOCOL.md](docs/AGENT_PROTOCOL.md)**. Licencja MIT.
+
+Film demo (2:30, napisy po angielsku): https://www.youtube.com/watch?v=qmY8n-7ZRvM · Zgłoszenie na Devpost: https://devpost.com/software/mission-rescue-agent-proof-recovery
