@@ -12,7 +12,7 @@ An agent promises to do a mission from A to Z, finishes part of it, then goes qu
 
 ## Try it in one minute (no install)
 
-1. Open **https://daniel221287.github.io/mission-rescue/** (phone or computer). Switch to English with the **EN** button.
+1. Open **https://daniel221287.github.io/mission-rescue/** (phone or computer). The page follows your browser's language (Polish or English); the **PL/EN** button in the top corner switches it.
 2. Open **Weekly report from test data**. It is red: 3 of 7 tasks are proven, task 4 left a half-written file, and the agent has been silent for over two hours.
 3. Read **What happened**, **What to do** and the **Rescue plan** (last confirmed checkpoint, what to check first, what to do next). **Copy the instruction** gives the text you would hand to your agent.
 4. Press **Run the sample agent**: it really computes tasks 4 to 7 from fictional data and writes each result with its SHA-256 fingerprint. Then press **Check again**: **7 of 7 proven**, green.
@@ -34,16 +34,16 @@ node tools/server.mjs --open
 
 On Windows you can double-click **START.cmd** instead. The page opens at `http://127.0.0.1:4317/app/`. On first start the sample missions are written to `missions/`; the page reads that folder through a small read-only local program (it serves files, it never changes them).
 
-The same demo from the command line:
+The same demo from the command line (the output is in Polish by default; `--lang en` switches it to English):
 
 ```
-node tools/mission-rescue.mjs demo-reset                            # write the sample missions to missions/ (the local program also does it on its first start)
-node tools/mission-rescue.mjs check missions/weekly-report          # red: exit code 1
-node tools/mission-rescue.mjs demo-agent missions/weekly-report     # the sample agent finishes tasks 4-7
-node tools/mission-rescue.mjs check missions/weekly-report          # complete: exit code 0
-node tools/mission-rescue.mjs honesty-test missions/weekly-report   # silently change task 3's file
-node tools/mission-rescue.mjs check missions/weekly-report --lang en
-node tools/mission-rescue.mjs demo-reset                            # back to the start
+node tools/mission-rescue.mjs demo-reset                                      # write the sample missions to missions/ (the local program also does it on its first start)
+node tools/mission-rescue.mjs check missions/weekly-report --lang en          # red: exit code 1
+node tools/mission-rescue.mjs demo-agent missions/weekly-report --lang en     # the sample agent finishes tasks 4-7
+node tools/mission-rescue.mjs check missions/weekly-report --lang en          # complete: exit code 0
+node tools/mission-rescue.mjs honesty-test missions/weekly-report --lang en   # silently change task 3's file
+node tools/mission-rescue.mjs check missions/weekly-report --lang en          # proof problem: exit code 1
+node tools/mission-rescue.mjs demo-reset                                      # back to the start
 ```
 
 `check` exits with 0 only when the mission is complete and proven (1: not complete, 2: unreadable), so it can guard a script or a CI step. Run the tests with `node --test` (48 tests: proof levels, every stop verdict, the rescue plan, red to green to red in memory and on disk, limits labels, the status-line capture, the picked-folder sources).
@@ -97,7 +97,7 @@ Pozostałe przykłady pokazują inne zatrzymania: czeka na limit, czeka na Ciebi
 
 ### Na swoim komputerze
 
-Potrzebny [Node.js](https://nodejs.org) 20 lub nowszy, nic więcej. Pobierz repozytorium i uruchom **START.cmd** (Windows) albo `node tools/server.mjs --open`. Strona otworzy się pod `http://127.0.0.1:4317/app/`, a przykładowe misje trafią do folderu `missions/`. Te same kroki w wierszu poleceń są w części angielskiej wyżej (`check`, `demo-agent`, `honesty-test`, `demo-reset`); dodaj `--lang en` dla angielskiego, domyślnie jest polski.
+Potrzebny [Node.js](https://nodejs.org) 20 lub nowszy, nic więcej. Pobierz repozytorium i uruchom **START.cmd** (Windows) albo `node tools/server.mjs --open`. Strona otworzy się pod `http://127.0.0.1:4317/app/`, a przykładowe misje trafią do folderu `missions/`. Te same kroki w wierszu poleceń są w części angielskiej wyżej (`demo-reset`, `check`, `demo-agent`, `honesty-test`); tam mają `--lang en`, a bez tej opcji wynik jest po polsku.
 
 ### Jak to działa w skrócie
 

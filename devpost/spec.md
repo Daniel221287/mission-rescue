@@ -194,7 +194,7 @@ mission-rescue/
 │   └── img/                    # README screenshots
 ├── test/                       # node --test
 ├── missions/                   # local workspace (demo-reset; not committed)
-└── devpost/                    # scope, prd, spec, checklist, HTML companions, app map
+└── devpost/                    # scope, prd, spec, checklist, app map (app-map.html)
 ```
 
 ## External Services and Dependencies

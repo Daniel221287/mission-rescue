@@ -42,8 +42,9 @@ a { color: inherit; }
   <li><strong>Silnik</strong> <code>app/engine/</code>: czytanie misji i logu, poziomy dowodu, diagnoza zatrzymania, plan ratunkowy, limity. Ten sam kod działa w przeglądarce, w wierszu poleceń i w testach.</li>
   <li><strong>Ekran</strong> <code>app/main.mjs</code> (logika), <code>app/i18n.mjs</code> (wszystkie teksty PL/EN), <code>app/styles.css</code> (wygląd), <code>app/beacon.mjs</code> (wieża sygnalizacyjna 3D).</li>
   <li><strong>Przykłady</strong> <code>app/demo/</code>: fikcyjne misje liczone naprawdę i przykładowy agent.</li>
+  <li><strong>Źródła plików</strong>: <code>app/sources-browser.mjs</code> w przeglądarce (lokalny program albo folder wybrany w przeglądarce), <code>app/engine/memory-source.mjs</code> w pamięci (przykłady, przykładowy agent, testy), <code>tools/fs-source.mjs</code> na dysku (wiersz poleceń i lokalny program). Każda ścieżka jest sprawdzana, żeby nie wyszła poza folder misji.</li>
   <li><strong>Narzędzia</strong> <code>tools/</code>: lokalny program tylko do odczytu (<code>server.mjs</code>), wiersz poleceń (<code>mission-rescue.mjs</code>), pasek stanu Claude Code (<code>claude-statusline.mjs</code>).</li>
-  <li><strong>Testy</strong> <code>test/</code>: uruchamiasz je poleceniem <code>node --test</code>.</li>
+  <li><strong>Testy</strong> <code>test/</code>: 48 testów, uruchamiasz je poleceniem <code>node --test</code>.</li>
 </ul>
 <p class="muted">Bez serwera w chmurze i bez bazy danych: wszystko czyta pliki na Twoim urządzeniu.</p>
 </section>
@@ -98,7 +99,7 @@ a { color: inherit; }
   <li>Testy: <code>node --test</code>.</li>
 </ul>
 <details><summary>O tej mapie</summary>
-<p>Zdjęcie kodu z commita <code>b496e71</code> (21.10.2026). Kod może się później zmienić; nazwy funkcji do wyszukania są stabilniejsze niż numery linii.</p>
+<p>Sprawdzona z najnowszym kodem 21.10.2026 wieczorem. Kod programu (<code>app/</code> i <code>tools/</code>) nie zmienił się od commita <code>b496e71</code>: późniejsze commity poprawiały tylko dokumenty (README, licencje, plan i tę mapę). Każdy plik i każda funkcja z tej mapy istnieje pod podaną nazwą. Nazwy funkcji do wyszukania są stabilniejsze niż numery linii.</p>
 </details>
 </section>
 </main>
