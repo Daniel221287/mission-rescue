@@ -1,0 +1,63 @@
+1
+00:00:00,500 --> 00:00:05,800
+I'm not a programmer. For about two years I've been learning to work together with AI.
+
+2
+00:00:06,300 --> 00:00:12,300
+What annoyed me most was that I gave an agent a mission from A to Z,
+
+3
+00:00:12,300 --> 00:00:16,600
+and it did a piece, suddenly stopped, and afterwards I didn't know
+
+4
+00:00:16,600 --> 00:00:21,000
+what was done, what wasn't, and why everything was standing still.
+
+5
+00:00:21,500 --> 00:00:27,600
+I already have so many of these AI projects that sometimes I can't keep track of all of it myself.
+
+6
+00:00:27,600 --> 00:00:35,400
+That's why I wanted to create something that would show the truth about the agents' work,
+
+7
+00:00:35,400 --> 00:00:41,000
+and not just their assurances that everything is ready.
+
+8
+00:00:46,200 --> 00:00:54,000
+I want a tool that can show the truth about agents' work, help recover an interrupted mission
+
+9
+00:00:54,000 --> 00:00:58,500
+and bring it to a confirmed completion.
+
+10
+00:01:09,000 --> 00:01:14,500
+Mission from A to Z: green only with proof.
+
+11
+00:01:31,500 --> 00:01:38,500
+I would like other people to be able to use it too, because I'm surely not the only one with this problem.
+
+12
+00:01:50,500 --> 00:01:58,000
+I can't write this kind of code myself, but I have ideas, I plan with agents
+
+13
+00:01:58,000 --> 00:02:05,500
+and I try to understand better and better how to use their capabilities.
+
+14
+00:02:11,300 --> 00:02:18,300
+And that's exactly what excites me most: that a person without a programming education
+
+15
+00:02:18,300 --> 00:02:23,000
+can have an idea and, together with AI, make a tool that really works.
+
+16
+00:02:23,000 --> 00:02:29,500
+Pretty promises don't matter to me. What matters to me is real action and an honest showing of our work.
