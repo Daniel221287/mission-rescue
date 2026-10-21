@@ -21,7 +21,7 @@ Approval: the first build order was shown to Daniel at about 15:20; at 15:23 he 
   Learner check: Open the page, open "Raport tygodniowy" and say whether you can tell at a glance what was really done, why it stopped, and how sure the diagnosis is.
   Commit: `Read real missions and show proof levels with a stall diagnosis`
 
-- [ ] **2. Safe rescue and a real red-to-green finish**
+- [x] **2. Safe rescue and a real red-to-green finish**
   Becomes usable: The rescue panel (checkpoint 3, remaining 4–7, task 4 "check first", the instruction with Copy); the sample agent finishes the mission for real in the page and on disk; "Sprawdź ponownie" shows 7 of 7 green; "Test uczciwości" turns it red again. The public demo address works for the hands-on check.
   Why now: This completes the jury demo end to end while the page is still plain, so any flaw in the flow shows up before styling.
   PRD ref: `prd.md > The Core Journey` (steps 6–9), `prd.md > Mission Rescue`, `prd.md > Demo and Self-Check`

@@ -2,6 +2,8 @@
 // Command-line tool: check a mission folder, rebuild the sample missions on disk.
 //   node tools/mission-rescue.mjs check <mission folder> [--lang en] [--json]
 //   node tools/mission-rescue.mjs demo-reset [--workspace <folder>]
+//   node tools/mission-rescue.mjs demo-agent <mission folder> [--delay ms]   (sample mission only)
+//   node tools/mission-rescue.mjs honesty-test <mission folder>              (sample mission only)
 // Exit codes for "check": 0 complete, 1 not complete, 2 unreadable or bad input.
 // spec.md > Command-Line Tool
 
@@ -12,6 +14,7 @@ import { createFsSource } from './fs-source.mjs';
 import { analyzeMission } from '../app/engine/analyze.mjs';
 import { readLimits } from '../app/engine/limits.mjs';
 import { buildSampleMissions, demoLimitsFile } from '../app/demo/samples.mjs';
+import { runSampleAgent, tamperSample } from '../app/demo/sample-agent.mjs';
 import {
   t, describeReason, describeFact, describeProblem, stateText, describeCheck, describeCheckFailure,
 } from '../app/i18n.mjs';
@@ -62,6 +65,11 @@ export function formatReport(report, lang = 'pl', nowMs = Date.now()) {
       out.push(`       ${task.artifact.file} · ${describeCheck(lang, task.artifact.check)}${check && !check.ok ? ` · ${describeCheckFailure(lang, check)}` : ''}`);
     }
   }
+  if (report.ok && report.rescue && report.rescue.needed) {
+    out.push('');
+    out.push(`${t(lang, 'section.rescue').toUpperCase()}`);
+    out.push(report.rescue.instruction[lang]);
+  }
   if (report.problems.length) {
     out.push(`${t(lang, 'section.problems')}:`);
     for (const p of report.problems) out.push(`  - ${describeProblem(lang, p)}`);
@@ -102,6 +110,26 @@ async function main(argv) {
     else console.log(formatReport(report, lang));
     return !report.ok ? 2 : report.verdict.code === 'complete' ? 0 : 1;
   }
+  if (command === 'demo-agent' && target) {
+    const folder = path.resolve(target);
+    const source = createFsSource(folder, { writable: true });
+    const workspace = createFsSource(path.dirname(folder));
+    const limits = await readLimits(workspace);
+    const delayMs = Number.isFinite(args.delay) ? args.delay : 0;
+    await runSampleAgent(source, {
+      delayMs,
+      limits: limits.entries,
+      onStep: (step) => console.log(`[sample agent] ${t(lang, step.key === 'demo.agent.finished' ? 'demo.agent.finished.cli' : step.key, step)}`),
+    });
+    return 0;
+  }
+  if (command === 'honesty-test' && target) {
+    const result = await tamperSample(createFsSource(path.resolve(target), { writable: true }));
+    console.log(lang === 'en'
+      ? `Changed one daily total in ${result.file} (task ${result.task}) without telling anyone. Run "check" to see whether it is caught.`
+      : `Zmieniono jedną sumę dzienną w ${result.file} (zadanie ${result.task}) bez zgłoszenia. Uruchom „check”, żeby zobaczyć, czy to wyłapie.`);
+    return 0;
+  }
   if (command === 'demo-reset') {
     const result = await demoReset(args.workspace || DEFAULT_WORKSPACE);
     console.log(`Sample missions written to ${result.root}: ${result.missions.join(', ')}`);
@@ -111,6 +139,8 @@ async function main(argv) {
     'Mission Rescue',
     '  node tools/mission-rescue.mjs check <mission folder> [--lang en] [--json]',
     '  node tools/mission-rescue.mjs demo-reset [--workspace <folder>]',
+    '  node tools/mission-rescue.mjs demo-agent <mission folder> [--delay ms]',
+    '  node tools/mission-rescue.mjs honesty-test <mission folder>',
   ].join('\n'));
   return command ? 2 : 0;
 }

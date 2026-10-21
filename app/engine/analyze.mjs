@@ -6,6 +6,7 @@ import { readWorklog, LOG_FILE } from './worklog.mjs';
 import { judgeTask } from './proof.mjs';
 import { diagnose, VERDICT_COLOR } from './stall.mjs';
 import { readLimits, LIMITS_DIR } from './limits.mjs';
+import { planRescue } from './rescue.mjs';
 import { subSource } from './paths.mjs';
 
 const RECENT_EVENTS = 12;
@@ -60,7 +61,7 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
   for (const task of mission.tasks) tasks.push(await judgeTask(task, events, source, { confirmations, missionKey }));
   const verdict = diagnose({ mission, tasks, events, now: nowMs, limits });
 
-  return {
+  const report = {
     dir,
     ok: true,
     id: mission.id,
@@ -79,6 +80,8 @@ export async function analyzeMission(source, { now = Date.now(), limits = [], co
     })),
     checkedAt: new Date(nowMs).toISOString(),
   };
+  report.rescue = planRescue(report);
+  return report;
 }
 
 export async function analyzeWorkspace(workspace, { now = Date.now(), manualLimits = [], confirmations = [] } = {}) {

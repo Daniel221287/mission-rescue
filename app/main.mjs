@@ -2,7 +2,9 @@
 // spec.md > Command Center Screen · prd.md > Screens and Layout
 
 import { buildSampleWorkspace } from './demo/samples.mjs';
+import { runSampleAgent, tamperSample } from './demo/sample-agent.mjs';
 import { analyzeWorkspace } from './engine/analyze.mjs';
+import { subSource } from './engine/paths.mjs';
 import { createHttpWorkspaceSource, localProgramAvailable } from './sources-browser.mjs';
 import {
   t, describeReason, describeFact, describeProblem, stateText, describeCheck, describeCheckFailure,
@@ -36,6 +38,10 @@ const state = {
   result: null,
   busy: false,
   error: null,
+  agentRunning: false,
+  agentSteps: [],
+  notice: null,
+  copyState: null,
 };
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -195,6 +201,77 @@ function renderLog(report) {
   return `<ol class="log">${report.recentEvents.map((e) => `<li><span class="log__time">${esc(fmtTime(e.at, state.lang, now))}</span> <span class="log__event">${esc(eventName(state.lang, e.event))}</span>${e.task != null ? ` <span class="log__task">#${e.task}</span>` : ''}${e.message ? ` <span class="log__msg">${esc(e.message)}</span>` : ''}${e.question ? ` <span class="log__msg">${esc(e.question)}</span>` : ''}${e.artifact && e.artifact.file ? ` <code>${esc(e.artifact.file)}</code>` : ''}</li>`).join('')}</ol>`;
 }
 
+const ACTION_COLOR = { 'check-first': 'amber', redo: 'red', do: 'grey', confirm: 'teal' };
+
+function renderRescue(report) {
+  const plan = report.rescue;
+  if (!plan) return '';
+  if (!plan.needed) {
+    return `<section class="panel rescue"><h2 class="section-title">${esc(L('section.rescue'))}</h2><p class="muted">${esc(L('rescue.not-needed'))}</p></section>`;
+  }
+  const copyLabel = state.copyState === 'ok' ? L('btn.copied') : state.copyState === 'failed' ? L('btn.copy-failed') : L('btn.copy');
+  return `
+  <section class="panel rescue" aria-label="${esc(L('section.rescue'))}">
+    <h2 class="section-title">${esc(L('section.rescue'))}</h2>
+    <div class="rescue__summary">
+      <div class="kv"><span class="kv__k">${esc(L('rescue.checkpoint'))}</span><span class="kv__v">${esc(plan.checkpoint ? L('rescue.checkpoint.task', { task: plan.checkpoint }) : L('rescue.checkpoint.none'))}</span></div>
+      <div class="kv"><span class="kv__k">${esc(L('rescue.remaining'))}</span><span class="kv__v">${esc(plan.remaining.join(', '))}</span></div>
+    </div>
+    <h3 class="sub-title">${esc(L('rescue.steps'))}</h3>
+    <ol class="steps">
+      ${plan.steps.map((s) => `
+      <li class="step">
+        ${chip(ACTION_COLOR[s.action] || 'grey', L(`rescue.action.${s.action}`))}
+        <span class="step__title">${s.task}. ${esc(title2(s.title))}</span>
+        <span class="step__check muted small">${esc(L('rescue.check', { file: s.file, condition: describeCheck(state.lang, s.check) }))}</span>
+      </li>`).join('')}
+    </ol>
+    <h3 class="sub-title">${esc(L('rescue.instruction'))}</h3>
+    <pre class="instruction" id="rescue-text" tabindex="0">${esc(plan.instruction[state.lang])}</pre>
+    <div class="actions">
+      <button class="btn" data-action="copy">${esc(copyLabel)}</button>
+      <span class="muted small">${esc(L('rescue.handover'))}</span>
+    </div>
+  </section>`;
+}
+
+function renderDemo(report) {
+  if (report.demo !== 'weekly-report') return '';
+  if (state.sourceKind === 'samples') {
+    return `
+  <section class="panel demo" aria-label="${esc(L('section.demo'))}">
+    <h2 class="section-title">${esc(L('section.demo'))}</h2>
+    <div class="demo__row">
+      <button class="btn btn--primary" data-action="run-agent" ${state.agentRunning ? 'disabled' : ''}>${esc(state.agentRunning ? L('btn.running-agent') : L('btn.run-agent'))}</button>
+      <p class="muted small">${esc(L('demo.agent.note'))}</p>
+    </div>
+    ${state.agentSteps.length ? `<ol class="agent-log" aria-live="polite">${state.agentSteps.map((s) => `<li>${esc(t(state.lang, s.key, s))}</li>`).join('')}</ol>` : ''}
+    <div class="demo__row">
+      <button class="btn" data-action="honesty" ${state.agentRunning ? 'disabled' : ''}>${esc(L('btn.honesty'))}</button>
+      <p class="muted small">${esc(L('demo.honesty.note'))}</p>
+    </div>
+    <div class="demo__row">
+      <button class="btn btn--ghost" data-action="reset-samples" ${state.agentRunning ? 'disabled' : ''}>${esc(L('btn.reset-samples'))}</button>
+      <p class="muted small">${esc(L('demo.reset.note'))}</p>
+    </div>
+  </section>`;
+  }
+  if (state.sourceKind === 'local') {
+    const folder = `missions/${report.dir}`;
+    return `
+  <section class="panel demo" aria-label="${esc(L('section.demo'))}">
+    <h2 class="section-title">${esc(L('section.demo'))}</h2>
+    <p>${esc(L('demo.local.note'))}</p>
+    <pre class="cmd">node tools/mission-rescue.mjs demo-agent ${esc(folder)} --delay 1500</pre>
+    <p>${esc(L('demo.local.honesty'))}</p>
+    <pre class="cmd">node tools/mission-rescue.mjs honesty-test ${esc(folder)}</pre>
+    <p>${esc(L('demo.local.reset'))}</p>
+    <pre class="cmd">node tools/mission-rescue.mjs demo-reset</pre>
+  </section>`;
+  }
+  return '';
+}
+
 function renderMission(dir) {
   const report = state.result && state.result.missions.find((m) => m.dir === dir);
   if (!report) {
@@ -210,8 +287,11 @@ function renderMission(dir) {
     </div>
     ${verdictBlock(report)}
     <div class="actions">
-      <button class="btn btn--primary" data-action="recheck" ${state.busy ? 'disabled' : ''}>${esc(L('btn.recheck'))}</button>
+      <button class="btn btn--primary" data-action="recheck" ${state.busy || state.agentRunning ? 'disabled' : ''}>${esc(L('btn.recheck'))}</button>
     </div>
+    ${state.notice ? `<p class="notice" role="status">${esc(state.notice)}</p>` : ''}
+    ${report.ok ? renderRescue(report) : ''}
+    ${renderDemo(report)}
     ${report.ok ? `
     <section class="panel">
       <h2 class="section-title">${esc(L('section.tasks'))} <span class="muted small">${esc(L('mission.proven', report.counts))}</span></h2>
@@ -282,6 +362,58 @@ app.addEventListener('click', async (event) => {
     location.hash = '#/';
     await refresh();
   } else if (action === 'recheck') {
+    state.notice = null;
+    state.copyState = null;
+    await refresh();
+  } else if (action === 'copy') {
+    const pre = document.getElementById('rescue-text');
+    const text = pre ? pre.textContent : '';
+    try {
+      await navigator.clipboard.writeText(text);
+      state.copyState = 'ok';
+      render();
+    } catch {
+      state.copyState = 'failed';
+      render();
+      const again = document.getElementById('rescue-text');
+      if (again) {
+        const range = document.createRange();
+        range.selectNodeContents(again);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+  } else if (action === 'run-agent') {
+    const dir = route().mission;
+    state.agentRunning = true;
+    state.agentSteps = [];
+    state.notice = null;
+    render();
+    try {
+      await runSampleAgent(subSource(state.sources.samples, dir), {
+        delayMs: 600,
+        limits: state.result ? state.result.limits.entries : [],
+        onStep: (step) => {
+          state.agentSteps.push(step);
+          render();
+        },
+      });
+    } catch (error) {
+      state.notice = error && error.message ? error.message : String(error);
+    }
+    state.agentRunning = false;
+    render();
+  } else if (action === 'honesty') {
+    const dir = route().mission;
+    await tamperSample(subSource(state.sources.samples, dir));
+    state.notice = L('demo.honesty.done');
+    render();
+  } else if (action === 'reset-samples') {
+    state.sources.samples = await buildSampleWorkspace({ now: Date.now() });
+    state.agentSteps = [];
+    state.notice = null;
+    state.copyState = null;
     await refresh();
   }
 });

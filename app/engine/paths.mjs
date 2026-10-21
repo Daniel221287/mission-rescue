@@ -57,6 +57,7 @@ export function subSource(source, dir) {
   if (source.writable) {
     view.write = (path, data) => source.write(joinRel(base, path), data);
     view.append = (path, text) => source.append(joinRel(base, path), text);
+    if (typeof source.remove === 'function') view.remove = (path) => source.remove(joinRel(base, path));
   }
   return view;
 }

@@ -73,7 +73,7 @@ export function diagnose({ mission, tasks, events, now, limits = [] }) {
   else facts.push({ key: 'nothing-proven', params: {} });
   facts.push({ key: 'last-signal', params: { event: lastEvent.event, task: lastEvent.task, at: lastEvent.at } });
   facts.push({ key: 'silence', params: { ms: silence } });
-  facts.push({ key: 'waiting-time', params: { ms: T, expected: current ? current.expectedMinutes : null } });
+  facts.push({ key: 'waiting-time', params: { ms: T, minimum: mission.stallMinutes, expected: current ? current.expectedMinutes : null } });
   if (current && current.partialArtifact) facts.push({ key: 'partial-file', params: { task: current.id, file: current.artifact.file } });
   if (limit) {
     facts.push({ key: 'limit', params: { plan: limit.plan, window: limit.window, used: limit.usedPercent, until: limit.resetsAt, label: limit.label } });

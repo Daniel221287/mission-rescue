@@ -191,3 +191,24 @@ code, .sha { font-family: var(--mono); font-size: 0.86em; word-break: break-all;
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* slice 2: rescue plan and demo */
+.sub-title { font-size: 0.95rem; margin: 16px 0 8px; }
+.rescue__summary { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.kv { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); }
+.kv__k { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.kv__v { font-weight: 700; font-size: 1.05rem; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.step { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.step .chip { justify-self: start; }
+.step__title { font-weight: 650; }
+.instruction, .cmd {
+  margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line);
+  font: 0.86rem/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto;
+}
+.cmd { max-height: none; }
+.demo__row { display: grid; gap: 6px; margin-top: 12px; }
+.demo__row .btn { justify-self: start; }
+.demo__row p { margin: 0; }
+.agent-log { margin: 12px 0 0; padding: 10px 14px 10px 32px; border-radius: 10px; background: var(--surface-2); font-size: 0.9rem; display: grid; gap: 3px; }
+.notice { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: var(--amber-bg); color: var(--ink); border: 1px solid var(--amber); }
