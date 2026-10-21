@@ -37,6 +37,7 @@ On Windows you can double-click **START.cmd** instead. The page opens at `http:/
 The same demo from the command line:
 
 ```
+node tools/mission-rescue.mjs demo-reset                            # write the sample missions to missions/ (the local program also does it on its first start)
 node tools/mission-rescue.mjs check missions/weekly-report          # red: exit code 1
 node tools/mission-rescue.mjs demo-agent missions/weekly-report     # the sample agent finishes tasks 4-7
 node tools/mission-rescue.mjs check missions/weekly-report          # complete: exit code 0
